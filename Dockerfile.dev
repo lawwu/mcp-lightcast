@@ -1,0 +1,67 @@
+# Development Dockerfile for MCP Lightcast Server
+# Includes dev dependencies and testing capabilities
+
+FROM python:3.12-alpine AS development
+
+# Install uv package manager
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# Set environment variables for uv
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+# Install system dependencies for development
+RUN apk add --no-cache \
+    git \
+    ca-certificates \
+    tzdata \
+    build-base \
+    libffi-dev
+
+# Create app directory
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml ./
+COPY uv.lock* ./
+
+# Install all dependencies (including dev dependencies)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --all-groups
+
+# Copy source code
+COPY . .
+
+# Install the project in development mode
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --all-groups
+
+# Make sure the virtual environment is in PATH
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Set Python path
+ENV PYTHONPATH="/app/src:$PYTHONPATH"
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Default environment variables for development
+ENV LIGHTCAST_BASE_URL="https://api.lightcast.io" \
+    LIGHTCAST_OAUTH_URL="https://auth.lightcast.io/oauth/token" \
+    LIGHTCAST_RATE_LIMIT="1000" \
+    MCP_SERVER_NAME="lightcast-mcp-server-dev" \
+    LOG_LEVEL="DEBUG" \
+    MASK_ERROR_DETAILS="false"
+
+# Expose port for HTTP transport and debugging
+EXPOSE 9000
+EXPOSE 5678
+
+# Default command for development
+ENTRYPOINT ["mcp-lightcast"]
+CMD ["--log-level", "DEBUG"]

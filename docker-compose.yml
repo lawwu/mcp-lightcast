@@ -1,0 +1,78 @@
+# Docker Compose for MCP Lightcast development and testing
+version: '3.8'
+
+services:
+  mcp-lightcast:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: mcp-lightcast-server
+    environment:
+      # Required Lightcast API credentials
+      - LIGHTCAST_CLIENT_ID=${LIGHTCAST_CLIENT_ID}
+      - LIGHTCAST_CLIENT_SECRET=${LIGHTCAST_CLIENT_SECRET}
+      
+      # Optional configuration (with defaults)
+      - LIGHTCAST_BASE_URL=${LIGHTCAST_BASE_URL:-https://api.lightcast.io}
+      - LIGHTCAST_OAUTH_URL=${LIGHTCAST_OAUTH_URL:-https://auth.lightcast.io/oauth/token}
+      - LIGHTCAST_RATE_LIMIT=${LIGHTCAST_RATE_LIMIT:-1000}
+      
+      # MCP Server configuration
+      - MCP_SERVER_NAME=${MCP_SERVER_NAME:-lightcast-mcp-server}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MASK_ERROR_DETAILS=${MASK_ERROR_DETAILS:-true}
+    
+    # Mount .env file if it exists
+    env_file:
+      - .env
+    
+    # For stdio transport (default)
+    stdin_open: true
+    tty: true
+    
+    # For HTTP transport (when implemented)
+    # ports:
+    #   - "9000:9000"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "mcp-lightcast", "--validate-config", "--quiet"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Development service with dev dependencies
+  mcp-lightcast-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: mcp-lightcast-dev
+    environment:
+      - LIGHTCAST_CLIENT_ID=${LIGHTCAST_CLIENT_ID}
+      - LIGHTCAST_CLIENT_SECRET=${LIGHTCAST_CLIENT_SECRET}
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./config:/app/config:ro
+    command: ["--log-level", "DEBUG", "--validate-config"]
+    profiles:
+      - dev
