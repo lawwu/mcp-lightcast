@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional
 from fastmcp import FastMCP
 
-from src.mcp_lightcast.tools.normalize_title_get_skills import TitleNormalizationWorkflow
+from .normalize_title_get_skills import TitleNormalizationWorkflow
 
 
 def register_workflow_tools(mcp: FastMCP):

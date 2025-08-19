@@ -6,8 +6,27 @@ from typing import Any, Dict, Optional, Union
 import httpx
 from pydantic import BaseModel
 
-from config.settings import lightcast_config
-from src.mcp_lightcast.auth.oauth import lightcast_auth, AuthenticationError
+import sys
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+try:
+    from config.settings import lightcast_config
+except ImportError:
+    from pydantic_settings import BaseSettings
+    from pydantic import Field
+    
+    class LightcastConfig(BaseSettings):
+        client_id: str = Field(default="", env="LIGHTCAST_CLIENT_ID")
+        client_secret: str = Field(default="", env="LIGHTCAST_CLIENT_SECRET")
+        base_url: str = Field(default="https://api.lightcast.io", env="LIGHTCAST_BASE_URL")
+    
+    lightcast_config = LightcastConfig()
+
+from ..auth.oauth import lightcast_auth, AuthenticationError
 
 
 class APIError(Exception):

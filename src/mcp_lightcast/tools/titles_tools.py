@@ -3,7 +3,7 @@
 from typing import List, Dict, Any, Optional
 from fastmcp import FastMCP
 
-from src.mcp_lightcast.apis.titles import TitlesAPIClient
+from ..apis.titles import TitlesAPIClient
 
 
 def register_titles_tools(mcp: FastMCP):
