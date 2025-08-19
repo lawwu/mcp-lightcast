@@ -1,0 +1,89 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-lightcast"
+dynamic = ["version"]
+description = "MCP server for Lightcast API integration using FastMCP"
+readme = "README.md"
+authors = [
+    {name = "MCP Lightcast Team", email = "contact@mcp-lightcast.dev"}
+]
+dependencies = [
+    "fastmcp>=2.0.0",
+    "httpx>=0.25.0", 
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "click>=8.0.0",
+]
+requires-python = ">=3.10"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0", 
+    "pytest-httpx>=0.21.0",
+    "pytest-cov",
+    "black",
+    "ruff", 
+    "mypy",
+    "pre-commit",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-httpx>=0.21.0", 
+    "pytest-cov",
+]
+
+[project.scripts]
+mcp-lightcast = "mcp_lightcast:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--asyncio-mode=auto"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+ignore = ["E501"]  # Line too long
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+strict_optional = true
+
+[tool.uv-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "semver"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_lightcast"]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report] 
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
