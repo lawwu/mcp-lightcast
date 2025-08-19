@@ -97,14 +97,16 @@ def main(
     except ImportError:
         # Fallback configuration
         from pydantic_settings import BaseSettings
-        from pydantic import Field
+        from pydantic import Field, ConfigDict
         
         class LightcastConfig(BaseSettings):
-            client_id: str = Field(default="", env="LIGHTCAST_CLIENT_ID")
-            client_secret: str = Field(default="", env="LIGHTCAST_CLIENT_SECRET")
-            base_url: str = Field(default="https://api.lightcast.io", env="LIGHTCAST_BASE_URL")
-            oauth_url: str = Field(default="https://auth.lightcast.io/oauth/token", env="LIGHTCAST_OAUTH_URL")
-            rate_limit_per_hour: int = Field(default=1000, env="LIGHTCAST_RATE_LIMIT")
+            model_config = ConfigDict(extra="ignore")
+            
+            client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
+            client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
+            base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
+            oauth_url: str = Field(default="https://auth.lightcast.io/oauth/token", alias="LIGHTCAST_OAUTH_URL")
+            rate_limit_per_hour: int = Field(default=1000, alias="LIGHTCAST_RATE_LIMIT")
         
         lightcast_config = LightcastConfig()
     

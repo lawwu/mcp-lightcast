@@ -16,15 +16,14 @@ except ImportError:
     # Fallback for when config module is not in the path
     import os
     from pydantic_settings import BaseSettings
-    from pydantic import Field
+    from pydantic import Field, ConfigDict
     
     class ServerConfig(BaseSettings):
-        server_name: str = Field(default="lightcast-mcp-server", env="MCP_SERVER_NAME")
-        log_level: str = Field(default="INFO", env="LOG_LEVEL")
-        mask_error_details: bool = Field(default=True, env="MASK_ERROR_DETAILS")
+        model_config = ConfigDict(extra="ignore")
         
-        class Config:
-            env_file = ".env"
+        server_name: str = Field(default="lightcast-mcp-server", alias="MCP_SERVER_NAME")
+        log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+        mask_error_details: bool = Field(default=True, alias="MASK_ERROR_DETAILS")
     
     server_config = ServerConfig()
 

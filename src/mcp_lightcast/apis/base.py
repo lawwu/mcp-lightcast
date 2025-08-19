@@ -17,12 +17,14 @@ try:
     from config.settings import lightcast_config
 except ImportError:
     from pydantic_settings import BaseSettings
-    from pydantic import Field
+    from pydantic import Field, ConfigDict
     
     class LightcastConfig(BaseSettings):
-        client_id: str = Field(default="", env="LIGHTCAST_CLIENT_ID")
-        client_secret: str = Field(default="", env="LIGHTCAST_CLIENT_SECRET")
-        base_url: str = Field(default="https://api.lightcast.io", env="LIGHTCAST_BASE_URL")
+        model_config = ConfigDict(extra="ignore")
+        
+        client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
+        client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
+        base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
     
     lightcast_config = LightcastConfig()
 
