@@ -10,7 +10,7 @@ import click
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 
-from .server import mcp as server_instance
+# Remove direct import to avoid circular dependency
 from .auth.oauth import lightcast_auth
 
 
@@ -75,7 +75,7 @@ def main(
         load_dotenv(env_file)
         if not quiet:
             click.echo(f"✅ Loaded environment from {env_file}")
-    elif Path(".env").exists():
+    elif os.path.exists(".env"):
         load_dotenv()
         if not quiet:
             click.echo("✅ Loaded environment from .env")
@@ -85,7 +85,28 @@ def main(
     logger = logging.getLogger(__name__)
     
     # Validate configuration
-    from config.settings import lightcast_config
+    import sys
+    from pathlib import Path
+    
+    # Add project root to path for config import
+    project_root = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(project_root))
+    
+    try:
+        from config.settings import lightcast_config
+    except ImportError:
+        # Fallback configuration
+        from pydantic_settings import BaseSettings
+        from pydantic import Field
+        
+        class LightcastConfig(BaseSettings):
+            client_id: str = Field(default="", env="LIGHTCAST_CLIENT_ID")
+            client_secret: str = Field(default="", env="LIGHTCAST_CLIENT_SECRET")
+            base_url: str = Field(default="https://api.lightcast.io", env="LIGHTCAST_BASE_URL")
+            oauth_url: str = Field(default="https://auth.lightcast.io/oauth/token", env="LIGHTCAST_OAUTH_URL")
+            rate_limit_per_hour: int = Field(default=1000, env="LIGHTCAST_RATE_LIMIT")
+        
+        lightcast_config = LightcastConfig()
     
     if not lightcast_config.client_id or not lightcast_config.client_secret:
         click.echo("❌ Error: Missing required environment variables:", err=True)
@@ -136,6 +157,8 @@ def main(
         
         # Start the server based on transport
         if transport.lower() == "stdio":
+            # Import here to avoid circular dependency
+            from .server import mcp as server_instance
             server_instance.run()
         else:
             raise click.ClickException(f"Transport '{transport}' not yet implemented")

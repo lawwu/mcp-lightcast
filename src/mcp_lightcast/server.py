@@ -2,12 +2,35 @@
 
 import asyncio
 import logging
+import sys
+from pathlib import Path
 from fastmcp import FastMCP
 
-from config.settings import server_config
-from src.mcp_lightcast.tools.titles_tools import register_titles_tools
-from src.mcp_lightcast.tools.skills_tools import register_skills_tools
-from src.mcp_lightcast.tools.workflow_tools import register_workflow_tools
+# Add the project root to the Python path so we can import config
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+try:
+    from config.settings import server_config
+except ImportError:
+    # Fallback for when config module is not in the path
+    import os
+    from pydantic_settings import BaseSettings
+    from pydantic import Field
+    
+    class ServerConfig(BaseSettings):
+        server_name: str = Field(default="lightcast-mcp-server", env="MCP_SERVER_NAME")
+        log_level: str = Field(default="INFO", env="LOG_LEVEL")
+        mask_error_details: bool = Field(default=True, env="MASK_ERROR_DETAILS")
+        
+        class Config:
+            env_file = ".env"
+    
+    server_config = ServerConfig()
+
+from .tools.titles_tools import register_titles_tools
+from .tools.skills_tools import register_skills_tools
+from .tools.workflow_tools import register_workflow_tools
 
 
 # Configure logging
@@ -28,16 +51,7 @@ mcp = FastMCP(
     ]
 )
 
-# Register error handler
-@mcp.error_handler
-async def handle_error(error: Exception) -> str:
-    """Handle errors in MCP tools."""
-    logger.error(f"MCP tool error: {str(error)}", exc_info=True)
-    
-    if server_config.mask_error_details:
-        return "An error occurred while processing your request. Please check your parameters and try again."
-    else:
-        return f"Error: {str(error)}"
+# Note: Error handling is built into FastMCP, no need for custom handler
 
 # Register all tool categories
 register_titles_tools(mcp)

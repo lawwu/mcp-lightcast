@@ -3,7 +3,7 @@
 from typing import List, Dict, Any, Optional
 from fastmcp import FastMCP
 
-from src.mcp_lightcast.apis.skills import SkillsAPIClient
+from ..apis.skills import SkillsAPIClient
 
 
 def register_skills_tools(mcp: FastMCP):

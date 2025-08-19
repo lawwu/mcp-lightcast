@@ -5,7 +5,25 @@ import time
 from typing import Optional, Dict, Any
 import httpx
 from pydantic import BaseModel
-from config.settings import lightcast_config
+import sys
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+try:
+    from config.settings import lightcast_config
+except ImportError:
+    from pydantic_settings import BaseSettings
+    from pydantic import Field
+    
+    class LightcastConfig(BaseSettings):
+        client_id: str = Field(default="", env="LIGHTCAST_CLIENT_ID")
+        client_secret: str = Field(default="", env="LIGHTCAST_CLIENT_SECRET")
+        oauth_url: str = Field(default="https://auth.lightcast.io/oauth/token", env="LIGHTCAST_OAUTH_URL")
+    
+    lightcast_config = LightcastConfig()
 
 
 class TokenResponse(BaseModel):

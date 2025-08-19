@@ -3,9 +3,9 @@
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel
 
-from src.mcp_lightcast.apis.titles import TitlesAPIClient
-from src.mcp_lightcast.apis.classification import ClassificationAPIClient
-from src.mcp_lightcast.apis.similarity import SimilarityAPIClient
+from ..apis.titles import TitlesAPIClient
+from ..apis.classification import ClassificationAPIClient
+from ..apis.similarity import SimilarityAPIClient
 
 
 class NormalizedTitleWithSkills(BaseModel):
