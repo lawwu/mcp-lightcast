@@ -51,8 +51,28 @@ class RateLimitError(APIError):
 class BaseLightcastClient(ABC):
     """Base client for Lightcast API interactions."""
     
-    def __init__(self):
+    # API-specific OAuth scopes for premium APIs
+    API_SCOPES = {
+        "skills": "emsi_open",
+        "titles": "emsi_open", 
+        "classification": "classification_api",
+        "similarity": "similarity_api",
+        "occupation_benchmark": "occupation_benchmark_api",
+        "career_pathways": "career_pathways_api",
+        "job_postings": "job_postings_api"
+    }
+    
+    def __init__(self, api_name: Optional[str] = None):
         self.base_url = lightcast_config.base_url
+        self.api_name = api_name
+        
+        # Override OAuth scope if API name is provided and requires premium scope
+        if api_name and api_name in self.API_SCOPES:
+            required_scope = self.API_SCOPES[api_name]
+            if required_scope != lightcast_config.oauth_scope:
+                # Update the auth client with the correct scope for this API
+                lightcast_auth._scope = required_scope
+        
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(30.0),
             limits=httpx.Limits(max_keepalive_connections=20, max_connections=100)

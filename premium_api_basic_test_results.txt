@@ -1,0 +1,44 @@
+================================================================================
+PREMIUM API BASIC FUNCTIONALITY TEST RESULTS
+================================================================================
+Test Time: 2025-08-20 06:40:11
+Test Type: Basic client initialization and scope handling
+================================================================================
+
+SUMMARY:
+Total APIs tested: 5
+Successful initializations: 5/5
+Correct scope handling: 5/5
+Overall success rate: 100.0%
+
+DETAILED RESULTS:
+----------------------------------------
+
+Classification API:
+  Initialization: SUCCESS
+  Scope Handling: SUCCESS
+  Async Context: SUCCESS
+
+Similarity API:
+  Initialization: SUCCESS
+  Scope Handling: SUCCESS
+  Async Context: SUCCESS
+
+Occupation Benchmark API:
+  Initialization: SUCCESS
+  Scope Handling: SUCCESS
+  Async Context: SUCCESS
+
+Career Pathways API:
+  Initialization: SUCCESS
+  Scope Handling: SUCCESS
+  Async Context: SUCCESS
+
+Job Postings API:
+  Initialization: SUCCESS
+  Scope Handling: SUCCESS
+  Async Context: SUCCESS
+
+================================================================================
+END OF BASIC TEST RESULTS
+================================================================================
