@@ -159,3 +159,25 @@ check: lint type-check test ## Run all checks (lint, type-check, test)
 ci: clean install-dev check ## Run CI pipeline locally
 
 dev: install-dev dev-server ## Quick development setup and run
+
+# Publishing Commands
+build-dist: ## Build distribution packages
+	rm -rf dist/
+	uv build
+
+check-dist: build-dist ## Check distribution packages
+	uv run twine check dist/*
+
+publish-test: check-dist ## Publish to Test PyPI
+	@echo "📦 Publishing to Test PyPI..."
+	uv run twine upload --repository testpypi dist/*
+	@echo "✅ Published to Test PyPI: https://test.pypi.org/project/mcp-lightcast/"
+
+publish-pypi: check-dist ## Publish to production PyPI
+	@echo "🚀 Publishing to PyPI..."
+	@read -p "Are you sure you want to publish to production PyPI? [y/N] " confirm && [[ $$confirm == [yY] ]] || exit 1
+	uv run twine upload dist/*
+	@echo "✅ Published to PyPI: https://pypi.org/project/mcp-lightcast/"
+
+release: ## Run the release script
+	./scripts/publish-release.sh
