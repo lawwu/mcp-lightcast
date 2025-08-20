@@ -23,7 +23,8 @@ except ImportError:
         
         client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
         client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
-        oauth_url: str = Field(default="https://auth.lightcast.io/oauth/token", alias="LIGHTCAST_OAUTH_URL")
+        oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
+        oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
     
     lightcast_config = LightcastConfig()
 
@@ -43,6 +44,7 @@ class LightcastAuth:
         self.client_id = lightcast_config.client_id
         self.client_secret = lightcast_config.client_secret
         self.oauth_url = lightcast_config.oauth_url
+        self.oauth_scope = getattr(lightcast_config, 'oauth_scope', 'emsi_open')
         self._token: Optional[str] = None
         self._token_expires_at: float = 0
         self._lock = asyncio.Lock()
@@ -70,7 +72,7 @@ class LightcastAuth:
             "grant_type": "client_credentials",
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "scope": "openapi"
+            "scope": self.oauth_scope
         }
         
         headers = {

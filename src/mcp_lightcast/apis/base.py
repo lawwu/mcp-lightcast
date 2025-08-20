@@ -25,6 +25,8 @@ except ImportError:
         client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
         client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
         base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
+        oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
+        oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
     
     lightcast_config = LightcastConfig()
 
@@ -68,7 +70,7 @@ class BaseLightcastClient(ABC):
         endpoint: str,
         data: Optional[Union[Dict, str]] = None,
         params: Optional[Dict[str, Any]] = None,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """Make an authenticated request to the Lightcast API."""
         url = f"{self.base_url}/{endpoint.lstrip('/')}"

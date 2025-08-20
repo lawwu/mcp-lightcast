@@ -13,8 +13,7 @@ def register_titles_tools(mcp: FastMCP):
     async def search_job_titles(
         query: str,
         limit: int = 10,
-        offset: int = 0,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> List[Dict[str, Any]]:
         """
         Search for job titles in the Lightcast database.
@@ -22,14 +21,13 @@ def register_titles_tools(mcp: FastMCP):
         Args:
             query: Search term for job titles
             limit: Maximum number of results to return (default: 10)
-            offset: Number of results to skip (default: 0)
-            version: API version to use (default: "2023.4")
+            version: API version to use (default: "latest", can specify previous versions like "5.47", "5.46", etc.)
             
         Returns:
             List of matching job titles with their IDs and metadata
         """
         async with TitlesAPIClient() as client:
-            results = await client.search_titles(query, limit, offset, version)
+            results = await client.search_titles(query, limit, version)
             return [
                 {
                     "id": result.id,
@@ -42,14 +40,14 @@ def register_titles_tools(mcp: FastMCP):
     @mcp.tool
     async def get_job_title_details(
         title_id: str,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """
         Get detailed information about a specific job title.
         
         Args:
             title_id: Lightcast title ID
-            version: API version to use (default: "2023.4")
+            version: API version to use (default: "latest", can specify previous versions like "5.47", "5.46", etc.)
             
         Returns:
             Detailed title information including hierarchy and metadata
@@ -67,14 +65,14 @@ def register_titles_tools(mcp: FastMCP):
     @mcp.tool
     async def normalize_job_title(
         raw_title: str,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """
         Normalize a raw job title string to the best matching Lightcast title.
         
         Args:
             raw_title: Raw job title text to normalize
-            version: API version to use (default: "2023.4")
+            version: API version to use (default: "latest", can specify previous versions like "5.47", "5.46", etc.)
             
         Returns:
             Normalized title with confidence score and metadata
@@ -94,14 +92,14 @@ def register_titles_tools(mcp: FastMCP):
     @mcp.tool
     async def get_title_hierarchy(
         title_id: str,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """
         Get the hierarchical structure for a job title.
         
         Args:
             title_id: Lightcast title ID
-            version: API version to use (default: "2023.4")
+            version: API version to use (default: "latest", can specify previous versions like "5.47", "5.46", etc.)
             
         Returns:
             Hierarchical structure showing parent and child titles
@@ -111,16 +109,81 @@ def register_titles_tools(mcp: FastMCP):
     
     @mcp.tool
     async def get_titles_metadata(
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """
         Get metadata about the Lightcast titles taxonomy.
         
         Args:
-            version: API version to use (default: "2023.4")
+            version: API version to use (default: "latest", can specify previous versions like "5.47", "5.46", etc.)
             
         Returns:
             Metadata about the titles database including statistics and version info
         """
         async with TitlesAPIClient() as client:
             return await client.get_titles_metadata(version)
+    
+    @mcp.tool
+    async def get_titles_version_metadata(
+        version: str = "latest"
+    ) -> Dict[str, Any]:
+        """
+        Get comprehensive metadata about a specific titles API version.
+        
+        Args:
+            version: API version to use (default: "latest", can specify previous versions like "5.47", "5.46", etc.)
+            
+        Returns:
+            Comprehensive version metadata including field definitions and counts
+        """
+        async with TitlesAPIClient() as client:
+            result = await client.get_version_metadata(version)
+            return {
+                "version": result.version,
+                "title_count": result.titleCount,
+                "removed_title_count": result.removedTitleCount,
+                "fields": result.fields
+            }
+    
+    @mcp.tool
+    async def get_titles_general_metadata() -> Dict[str, Any]:
+        """
+        Get general metadata about the titles taxonomy.
+        
+        Returns:
+            General metadata including attribution and latest version information
+        """
+        async with TitlesAPIClient() as client:
+            result = await client.get_general_metadata()
+            return {
+                "latest_version": result.latestVersion,
+                "attribution": result.attribution
+            }
+    
+    @mcp.tool
+    async def bulk_retrieve_titles(
+        title_ids: List[str],
+        version: str = "latest"
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve multiple titles by their IDs in a single efficient request.
+        
+        Args:
+            title_ids: List of Lightcast title IDs to retrieve
+            version: API version to use (default: "latest", can specify previous versions like "5.47", "5.46", etc.)
+            
+        Returns:
+            List of detailed title information for all requested titles
+        """
+        async with TitlesAPIClient() as client:
+            results = await client.bulk_retrieve_titles(title_ids, version)
+            return [
+                {
+                    "id": result.id,
+                    "name": result.name,
+                    "type": result.type,
+                    "parent": result.parent,
+                    "children": result.children
+                }
+                for result in results
+            ]
