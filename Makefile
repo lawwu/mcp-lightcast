@@ -170,13 +170,25 @@ check-dist: build-dist ## Check distribution packages
 
 publish-test: check-dist ## Publish to Test PyPI
 	@echo "📦 Publishing to Test PyPI..."
-	uv run twine upload --repository testpypi dist/*
+	@if [ -z "$$TWINE_PASSWORD" ]; then \
+		echo "❌ TWINE_PASSWORD not set. Please set your TestPyPI token:"; \
+		echo "export TWINE_USERNAME=__token__"; \
+		echo "export TWINE_PASSWORD=your-testpypi-token"; \
+		exit 1; \
+	fi
+	TWINE_USERNAME=__token__ uv run twine upload --repository testpypi dist/*
 	@echo "✅ Published to Test PyPI: https://test.pypi.org/project/mcp-lightcast/"
 
 publish-pypi: check-dist ## Publish to production PyPI
 	@echo "🚀 Publishing to PyPI..."
+	@if [ -z "$$TWINE_PASSWORD" ]; then \
+		echo "❌ TWINE_PASSWORD not set. Please set your PyPI token:"; \
+		echo "export TWINE_USERNAME=__token__"; \
+		echo "export TWINE_PASSWORD=your-pypi-token"; \
+		exit 1; \
+	fi
 	@read -p "Are you sure you want to publish to production PyPI? [y/N] " confirm && [[ $$confirm == [yY] ]] || exit 1
-	uv run twine upload dist/*
+	TWINE_USERNAME=__token__ uv run twine upload dist/*
 	@echo "✅ Published to PyPI: https://pypi.org/project/mcp-lightcast/"
 
 release: ## Run the release script
