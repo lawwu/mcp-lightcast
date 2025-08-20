@@ -1,0 +1,81 @@
+{
+  "timestamp": "2025-08-20T08:00:49.001734",
+  "summary": {
+    "total_steps": 9,
+    "successful_steps": 3,
+    "failed_steps": 1,
+    "error_steps": 5
+  },
+  "results": [
+    {
+      "step": "Configuration Check",
+      "status": "SUCCESS",
+      "details": {
+        "has_client_id": true,
+        "has_client_secret": true,
+        "oauth_url": "https://auth.emsicloud.com/connect/token",
+        "default_scope": "emsi_open"
+      }
+    },
+    {
+      "step": "OAuth Connectivity",
+      "status": "FAILED",
+      "details": {
+        "status_code": 400,
+        "headers": {
+          "date": "Wed, 20 Aug 2025 15:00:46 GMT",
+          "content-type": "application/json; charset=UTF-8",
+          "transfer-encoding": "chunked",
+          "connection": "keep-alive",
+          "server": "Kestrel",
+          "cache-control": "no-store, no-cache, max-age=0",
+          "pragma": "no-cache",
+          "x-emsi-correlationid": "0HNEJEKE6565N:00004D60",
+          "strict-transport-security": "max-age=2592000"
+        }
+      }
+    },
+    {
+      "step": "Default Token Acquisition",
+      "status": "SUCCESS",
+      "details": {
+        "token_length": 852,
+        "scope_used": "emsi_open",
+        "expires_at": 1755705646.5138009
+      }
+    },
+    {
+      "step": "Premium Token (classification_api)",
+      "status": "ERROR",
+      "error": "Failed to get access token: 400 {\"error\":\"invalid_scope\"}"
+    },
+    {
+      "step": "Premium Token (similarity_api)",
+      "status": "ERROR",
+      "error": "Failed to get access token: 400 {\"error\":\"invalid_scope\"}"
+    },
+    {
+      "step": "Premium Token (occupation_benchmark_api)",
+      "status": "ERROR",
+      "error": "Failed to get access token: 400 {\"error\":\"invalid_scope\"}"
+    },
+    {
+      "step": "Premium Token (career_pathways_api)",
+      "status": "ERROR",
+      "error": "Failed to get access token: 400 {\"error\":\"invalid_scope\"}"
+    },
+    {
+      "step": "Premium Token (job_postings_api)",
+      "status": "ERROR",
+      "error": "Failed to get access token: 400 {\"error\":\"invalid_scope\"}"
+    },
+    {
+      "step": "Basic API Call",
+      "status": "SUCCESS",
+      "details": {
+        "status_code": 200,
+        "response_preview": "{\"data\": {\"version\": \"5.47\", \"fields\": [\"id\", \"name\", \"pluralName\", \"isSupervisor\", \"levelBand\", \"infoUrl\"], \"titleCount\": 73993, \"removedTitleCount\": 3623}}"
+      }
+    }
+  ]
+}
