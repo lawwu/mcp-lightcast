@@ -94,20 +94,39 @@ async def debug_authentication():
         lightcast_auth._token = None
         lightcast_auth._scope = None
         
+        # Show detailed scope information before token request
+        effective_scope = lightcast_auth._scope or lightcast_auth.oauth_scope
+        print(f"   📋 OAuth Request Details:")
+        print(f"     Client ID: {lightcast_auth.client_id}")
+        print(f"     OAuth URL: {lightcast_auth.oauth_url}")
+        print(f"     Default Scope (config): {lightcast_auth.oauth_scope}")
+        print(f"     Dynamic Scope Override: {lightcast_auth._scope}")
+        print(f"     Effective Scope (will be sent): {effective_scope}")
+        
+        # Manually create the OAuth request data to show exactly what's being sent
+        oauth_data = {
+            "grant_type": "client_credentials",
+            "client_id": lightcast_auth.client_id,
+            "client_secret": lightcast_auth.client_secret[:10] + "...",  # Hide secret
+            "scope": effective_scope
+        }
+        print(f"     OAuth POST Data: {oauth_data}")
+        
         token = await lightcast_auth.get_access_token()
-        print(f"   Token acquired: {token[:20]}...")
-        print(f"   Token length: {len(token)}")
-        print(f"   Current scope used: {lightcast_auth._current_scope}")
-        print(f"   Token expires at: {datetime.fromtimestamp(lightcast_auth._token_expires_at)}")
+        print(f"   ✅ Token acquired: {token[:20]}...")
+        print(f"   📏 Token length: {len(token)}")
+        print(f"   🎯 Scope used for this token: {lightcast_auth._current_scope}")
+        print(f"   ⏰ Token expires at: {datetime.fromtimestamp(lightcast_auth._token_expires_at)}")
         
         default_token_ok = bool(token and len(token) > 20)
-        print(f"   Default Token: {'✅ OK' if default_token_ok else '❌ FAILED'}")
+        print(f"   Status: {'✅ OK' if default_token_ok else '❌ FAILED'}")
         
         results.append({
             "step": "Default Token Acquisition",
             "status": "SUCCESS" if default_token_ok else "FAILED",
             "details": {
                 "token_length": len(token) if token else 0,
+                "scope_requested": effective_scope,
                 "scope_used": lightcast_auth._current_scope,
                 "expires_at": lightcast_auth._token_expires_at
             }
@@ -115,10 +134,14 @@ async def debug_authentication():
         
     except Exception as e:
         print(f"   ❌ Token Error: {e}")
+        # Try to extract more details from the error
+        if "400" in str(e) and "invalid" in str(e):
+            print(f"   💡 This suggests the scope '{effective_scope}' is not valid for your account")
         results.append({
             "step": "Default Token Acquisition",
             "status": "ERROR",
-            "error": str(e)
+            "error": str(e),
+            "scope_attempted": effective_scope
         })
     
     # Step 4: Test premium scope tokens
@@ -133,15 +156,33 @@ async def debug_authentication():
     
     for scope in premium_scopes:
         try:
-            print(f"\n   Testing scope: {scope}")
+            print(f"\n   🔐 Testing premium scope: {scope}")
             
             # Set the premium scope
             lightcast_auth._scope = scope
             lightcast_auth._token = None  # Force token refresh
             
+            # Show detailed scope information before token request
+            effective_scope = lightcast_auth._scope or lightcast_auth.oauth_scope
+            print(f"     📋 OAuth Request Details:")
+            print(f"       Default Scope (config): {lightcast_auth.oauth_scope}")
+            print(f"       Dynamic Scope Override: {lightcast_auth._scope}")
+            print(f"       Effective Scope (will be sent): {effective_scope}")
+            
+            # Manually create the OAuth request data to show exactly what's being sent
+            oauth_data = {
+                "grant_type": "client_credentials",
+                "client_id": lightcast_auth.client_id,
+                "client_secret": lightcast_auth.client_secret[:10] + "...",  # Hide secret
+                "scope": effective_scope
+            }
+            print(f"       OAuth POST Data: {oauth_data}")
+            
             token = await lightcast_auth.get_access_token()
-            print(f"     Token acquired: {token[:20]}...")
-            print(f"     Current scope: {lightcast_auth._current_scope}")
+            print(f"     ✅ Token acquired: {token[:20]}...")
+            print(f"     📏 Token length: {len(token)}")
+            print(f"     🎯 Scope used for this token: {lightcast_auth._current_scope}")
+            print(f"     ⏰ Token expires at: {datetime.fromtimestamp(lightcast_auth._token_expires_at)}")
             
             scope_token_ok = bool(token and lightcast_auth._current_scope == scope)
             print(f"     Status: {'✅ OK' if scope_token_ok else '❌ FAILED'}")
@@ -152,6 +193,70 @@ async def debug_authentication():
                 "details": {
                     "scope_requested": scope,
                     "scope_received": lightcast_auth._current_scope,
+                    "token_length": len(token) if token else 0,
+                    "effective_scope_sent": effective_scope
+                }
+            })
+            
+        except Exception as e:
+            print(f"     ❌ Error: {e}")
+            # Try to extract more details from the error
+            if "400" in str(e) and "invalid_scope" in str(e):
+                print(f"     💡 The scope '{scope}' is not available on your Lightcast account")
+                print(f"     💡 Contact Lightcast support to add premium API access")
+            elif "401" in str(e):
+                print(f"     💡 Authentication failed - check your client credentials")
+            elif "403" in str(e):
+                print(f"     💡 Access forbidden - you may need premium account upgrade")
+            
+            results.append({
+                "step": f"Premium Token ({scope})",
+                "status": "ERROR",
+                "error": str(e),
+                "scope_attempted": scope
+            })
+    
+    # Step 4.5: Test alternative scope formats
+    print(f"\n🔍 Step 4.5: Testing Alternative Scope Formats...")
+    alternative_scopes = [
+        "emsi_open",  # Standard basic scope
+        "emsi_premium",  # Possible premium scope
+        "lightcast_open",  # Alternative naming
+        "api_access",  # Generic access
+        "",  # Empty scope
+        "skills titles",  # Multiple basic scopes
+        "skills_api",  # Alternative premium format
+        "titles_api",  # Alternative premium format
+    ]
+    
+    for scope in alternative_scopes:
+        try:
+            print(f"\n   🧪 Testing alternative scope: '{scope}'")
+            
+            # Set the test scope
+            lightcast_auth._scope = scope if scope else None
+            lightcast_auth._token = None  # Force token refresh
+            
+            effective_scope = lightcast_auth._scope or lightcast_auth.oauth_scope
+            print(f"     📋 Effective Scope: '{effective_scope}'")
+            
+            token = await lightcast_auth.get_access_token()
+            print(f"     ✅ Token acquired: {token[:20]}...")
+            print(f"     🎯 Scope received: {lightcast_auth._current_scope}")
+            
+            alt_scope_ok = bool(token and len(token) > 20)
+            print(f"     Status: {'✅ OK' if alt_scope_ok else '❌ FAILED'}")
+            
+            if alt_scope_ok:
+                print(f"     💡 SUCCESS: Scope '{effective_scope}' works with your account!")
+            
+            results.append({
+                "step": f"Alternative Scope Test ({scope})",
+                "status": "SUCCESS" if alt_scope_ok else "FAILED",
+                "details": {
+                    "scope_requested": scope,
+                    "effective_scope": effective_scope,
+                    "scope_received": lightcast_auth._current_scope,
                     "token_length": len(token) if token else 0
                 }
             })
@@ -159,9 +264,10 @@ async def debug_authentication():
         except Exception as e:
             print(f"     ❌ Error: {e}")
             results.append({
-                "step": f"Premium Token ({scope})",
+                "step": f"Alternative Scope Test ({scope})",
                 "status": "ERROR",
-                "error": str(e)
+                "error": str(e),
+                "scope_attempted": scope
             })
     
     # Step 5: Test actual API call
@@ -171,32 +277,49 @@ async def debug_authentication():
         lightcast_auth._scope = None
         lightcast_auth._token = None
         
+        print(f"   📋 Preparing API Call with Default Scope...")
+        effective_scope = lightcast_auth._scope or lightcast_auth.oauth_scope
+        print(f"     Effective Scope for API: '{effective_scope}'")
+        
         headers = await lightcast_auth.get_auth_headers()
+        print(f"     Auth Headers: {{'Authorization': 'Bearer {headers['Authorization'][:30]}...', 'Content-Type': '{headers['Content-Type']}'}}")
+        print(f"     Current Token Scope: {lightcast_auth._current_scope}")
         
         async with httpx.AsyncClient() as client:
             # Test with a basic endpoint that should work with emsi_open scope
+            test_url = "https://api.lightcast.io/titles/versions/latest"
+            print(f"     Testing API Endpoint: {test_url}")
+            
             response = await client.get(
-                "https://api.lightcast.io/titles/versions/latest",
+                test_url,
                 headers=headers,
                 timeout=30.0
             )
             
-            print(f"   API Response: {response.status_code}")
+            print(f"   📊 API Response: {response.status_code}")
+            print(f"   📋 Response Headers: {dict(response.headers)}")
+            
             if response.status_code == 200:
                 data = response.json()
-                print(f"   API Data Sample: {json.dumps(data, indent=2)[:200]}...")
+                print(f"   ✅ API Data Sample: {json.dumps(data, indent=2)[:200]}...")
             else:
-                print(f"   API Error: {response.text}")
+                print(f"   ❌ API Error Response: {response.text}")
+                if response.status_code == 401:
+                    print(f"   💡 401 Error suggests authentication issue - token may be invalid")
+                elif response.status_code == 403:
+                    print(f"   💡 403 Error suggests scope '{lightcast_auth._current_scope}' lacks access to this endpoint")
             
             api_ok = response.status_code == 200
-            print(f"   API Call: {'✅ OK' if api_ok else '❌ FAILED'}")
+            print(f"   Status: {'✅ OK' if api_ok else '❌ FAILED'}")
             
             results.append({
                 "step": "Basic API Call",
                 "status": "SUCCESS" if api_ok else "FAILED",
                 "details": {
                     "status_code": response.status_code,
-                    "response_preview": response.text[:200] if response.text else None
+                    "response_preview": response.text[:200] if response.text else None,
+                    "token_scope_used": lightcast_auth._current_scope,
+                    "endpoint_tested": test_url
                 }
             })
             
