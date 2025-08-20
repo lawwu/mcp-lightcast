@@ -45,9 +45,11 @@ class LightcastAuth:
         self.client_secret = lightcast_config.client_secret
         self.oauth_url = lightcast_config.oauth_url
         self.oauth_scope = getattr(lightcast_config, 'oauth_scope', 'emsi_open')
+        self._scope: Optional[str] = None  # Dynamic scope override
         self._token: Optional[str] = None
         self._token_expires_at: float = 0
         self._lock = asyncio.Lock()
+        self._current_scope: Optional[str] = None  # Track which scope the current token was issued for
     
     async def get_access_token(self) -> str:
         """Get a valid access token, refreshing if necessary."""
@@ -63,16 +65,24 @@ class LightcastAuth:
         if not self._token:
             return False
         
+        # Check if the scope has changed and we need a new token
+        current_scope = self._scope or self.oauth_scope
+        if self._current_scope != current_scope:
+            return False
+        
         # Add 60 second buffer to prevent token expiration during request
         return time.time() < (self._token_expires_at - 60)
     
     async def _refresh_token(self) -> None:
         """Refresh the OAuth2 access token."""
+        # Use the dynamic scope if set, otherwise use the default scope
+        current_scope = self._scope or self.oauth_scope
+        
         data = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "scope": self.oauth_scope
+            "scope": current_scope
         }
         
         headers = {
@@ -92,6 +102,7 @@ class LightcastAuth:
                 token_data = TokenResponse(**response.json())
                 self._token = token_data.access_token
                 self._token_expires_at = time.time() + token_data.expires_in
+                self._current_scope = current_scope  # Track which scope this token was issued for
                 
             except httpx.HTTPStatusError as e:
                 raise AuthenticationError(f"Failed to get access token: {e.response.status_code} {e.response.text}")
