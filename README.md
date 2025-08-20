@@ -117,7 +117,8 @@ LIGHTCAST_CLIENT_SECRET=your_client_secret_here
 
 # Optional - API Configuration (with defaults)
 LIGHTCAST_BASE_URL=https://api.lightcast.io
-LIGHTCAST_OAUTH_URL=https://auth.lightcast.io/oauth/token
+LIGHTCAST_OAUTH_URL=https://auth.emsicloud.com/connect/token
+LIGHTCAST_OAUTH_SCOPE=emsi_open
 LIGHTCAST_RATE_LIMIT=1000
 
 # Optional - MCP Server Configuration
@@ -147,8 +148,14 @@ Contact [Lightcast](https://docs.lightcast.dev/contact) for API access and crede
 The server includes a comprehensive CLI with multiple options:
 
 ```bash
-# Basic usage
+# Basic usage (uses streamable-http on port 3000 by default)
 mcp-lightcast
+
+# Use stdio transport (for Claude Desktop integration)
+mcp-lightcast --transport stdio
+
+# Use streamable-http transport with custom port
+mcp-lightcast --transport streamable-http --port 8080
 
 # With custom log level
 mcp-lightcast --log-level DEBUG
@@ -520,11 +527,29 @@ make uv-add-dev PACKAGE=pytest-mock
 - API errors include detailed status codes and messages
 - Network errors are handled with appropriate timeouts
 
-### Supported API Versions
+### API Version Flexibility
 
-- Default: `2023.4`
-- All tools accept a `version` parameter to use different API versions
-- Newer versions may include additional features and updated data
+The MCP server provides flexible version management:
+
+- **Default**: `"latest"` - Always uses the newest available API version
+- **Backward Compatible**: Users can specify any previous version (e.g., `"5.47"`, `"9.33"`)
+- **Future-Proof**: Automatically gets new API features when Lightcast releases updates
+
+**Examples:**
+```python
+# Use latest version (default)
+search_job_titles("software engineer")
+
+# Use specific version for consistency
+search_job_titles("software engineer", version="5.47")
+
+# Use older version if needed
+search_skills("python", version="9.32")
+```
+
+**Current Latest Versions:**
+- Titles API: `5.47+` (uses `"latest"`)
+- Skills API: `9.33+` (uses `"latest"`)
 
 ## Future Enhancements
 

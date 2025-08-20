@@ -21,7 +21,8 @@ class LightcastConfig(BaseSettings):
     client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
     client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
     base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
-    oauth_url: str = Field(default="https://auth.lightcast.io/oauth/token", alias="LIGHTCAST_OAUTH_URL")
+    oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
+    oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
     rate_limit_per_hour: int = Field(default=1000, alias="LIGHTCAST_RATE_LIMIT")
 
 

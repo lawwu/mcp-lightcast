@@ -58,7 +58,7 @@ register_skills_tools(mcp)
 register_workflow_tools(mcp)
 
 # Add server metadata
-@mcp.resource("server/info")
+@mcp.resource("lightcast://server/info")
 async def server_info() -> dict:
     """Get information about the Lightcast MCP server."""
     return {
@@ -76,7 +76,7 @@ async def server_info() -> dict:
         "rate_limits": "Configured per Lightcast API quotas"
     }
 
-@mcp.resource("server/health")
+@mcp.resource("lightcast://server/health")
 async def health_check() -> dict:
     """Health check endpoint for the server."""
     try:

@@ -19,8 +19,14 @@ install-dev: ## Install all dependencies including dev dependencies
 dev-server: ## Run development server with debug logging
 	uv run mcp-lightcast --log-level DEBUG
 
-run: ## Run the MCP server with default settings
+run: ## Run the MCP server with default settings (streamable-http)
 	uv run mcp-lightcast
+
+run-stdio: ## Run the MCP server with stdio transport
+	uv run mcp-lightcast --transport stdio
+
+run-http: ## Run the MCP server with streamable-http transport on port 3000
+	uv run mcp-lightcast --transport streamable-http --port 3000
 
 validate-config: ## Validate configuration and authentication
 	uv run mcp-lightcast --validate-config

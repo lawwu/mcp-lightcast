@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include TESTING_SUMMARY.md
+include pyproject.toml
+include uv.lock
+include .env.example
+recursive-include src *.py
+recursive-include tests *.py
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store

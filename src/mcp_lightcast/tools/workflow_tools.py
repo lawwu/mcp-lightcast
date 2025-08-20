@@ -16,7 +16,7 @@ def register_workflow_tools(mcp: FastMCP):
         max_skills_per_occupation: int = 20,
         skill_type: Optional[str] = None,
         confidence_threshold: float = 0.5,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """
         Complete workflow: normalize a job title and get associated skills.
@@ -59,7 +59,7 @@ def register_workflow_tools(mcp: FastMCP):
     async def get_title_skills_simple(
         raw_title: str,
         limit: int = 50,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """
         Simplified workflow to get skills for a job title.
@@ -87,7 +87,7 @@ def register_workflow_tools(mcp: FastMCP):
         job_description: str = "",
         extract_from_description: bool = True,
         merge_results: bool = True,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """
         Analyze a job posting to identify relevant skills from both title and description.

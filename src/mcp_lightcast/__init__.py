@@ -36,9 +36,9 @@ def setup_logging(level: str, quiet: bool = False):
 )
 @click.option(
     "--transport",
-    type=click.Choice(["stdio"], case_sensitive=False),
-    default="stdio",
-    help="Transport method for MCP communication (default: stdio)",
+    type=click.Choice(["stdio", "streamable-http"], case_sensitive=False),
+    default="streamable-http",
+    help="Transport method for MCP communication (default: streamable-http)",
 )
 @click.option(
     "--log-level",
@@ -52,6 +52,12 @@ def setup_logging(level: str, quiet: bool = False):
     help="Suppress all logging output",
 )
 @click.option(
+    "--port",
+    type=int,
+    default=3000,
+    help="Port for HTTP transport (default: 3000)",
+)
+@click.option(
     "--validate-config",
     is_flag=True,
     help="Validate configuration and exit",
@@ -59,9 +65,10 @@ def setup_logging(level: str, quiet: bool = False):
 @click.version_option(version=None, prog_name="mcp-lightcast")
 def main(
     env_file: Optional[Path] = None,
-    transport: str = "stdio", 
+    transport: str = "streamable-http", 
     log_level: str = "INFO",
     quiet: bool = False,
+    port: int = 3000,
     validate_config: bool = False,
 ):
     """
@@ -105,7 +112,8 @@ def main(
             client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
             client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
             base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
-            oauth_url: str = Field(default="https://auth.lightcast.io/oauth/token", alias="LIGHTCAST_OAUTH_URL")
+            oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
+            oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
             rate_limit_per_hour: int = Field(default=1000, alias="LIGHTCAST_RATE_LIMIT")
         
         lightcast_config = LightcastConfig()
@@ -138,6 +146,8 @@ def main(
     if not quiet:
         click.echo("🚀 Starting MCP Lightcast Server")
         click.echo(f"   Transport: {transport}")
+        if transport.lower() == "streamable-http":
+            click.echo(f"   Port: {port}")
         click.echo(f"   Log Level: {log_level}")
         click.echo(f"   Base URL: {lightcast_config.base_url}")
         click.echo("=" * 50)
@@ -162,6 +172,10 @@ def main(
             # Import here to avoid circular dependency
             from .server import mcp as server_instance
             server_instance.run()
+        elif transport.lower() == "streamable-http":
+            # Import here to avoid circular dependency
+            from .server import mcp as server_instance
+            server_instance.run(transport="streamable-http", port=port)
         else:
             raise click.ClickException(f"Transport '{transport}' not yet implemented")
             

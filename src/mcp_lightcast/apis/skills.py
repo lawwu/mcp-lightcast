@@ -6,25 +6,47 @@ from pydantic import BaseModel, Field
 from .base import BaseLightcastClient
 
 
+class SkillType(BaseModel):
+    """Skill type model."""
+    id: str
+    name: str
+
+
 class SkillSearchResult(BaseModel):
     """Skill search result model."""
     id: str
     name: str
-    type: Optional[str] = None
-    subcategory: Optional[str] = None
-    category: Optional[str] = None
+    type: Optional[SkillType] = None
+    subcategory: Optional[Any] = None  # Can be string or dict
+    category: Optional[Any] = None  # Can be string or dict
 
 
 class SkillDetail(BaseModel):
     """Detailed skill information."""
     id: str
     name: str
-    type: Optional[str] = None
-    subcategory: Optional[str] = None
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
+    type: Optional[SkillType] = None
+    subcategory: Optional[Any] = None  # Can be string or dict
+    category: Optional[Any] = None  # Can be string or dict
+    tags: Optional[List[Any]] = None  # Tags can be strings or dict objects
     infoUrl: Optional[str] = None
     description: Optional[str] = None
+
+
+class ExtractedSkill(BaseModel):
+    """Skill extracted from text."""
+    skill: SkillDetail
+    confidence: float
+
+
+class SkillsVersionMetadata(BaseModel):
+    """Skills version metadata."""
+    version: str
+    fields: List[str]
+    skillCount: int
+    removedSkillCount: int
+    languageSupport: List[str]
+    types: List[SkillType]
 
 
 class SkillsAPIClient(BaseLightcastClient):
@@ -34,17 +56,15 @@ class SkillsAPIClient(BaseLightcastClient):
         self,
         query: str,
         limit: int = 10,
-        offset: int = 0,
         skill_type: Optional[str] = None,
         category: Optional[str] = None,
         subcategory: Optional[str] = None,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> List[SkillSearchResult]:
         """Search for skills by name and filters."""
         params = {
             "q": query,
-            "limit": limit,
-            "offset": offset
+            "limit": limit
         }
         
         if skill_type:
@@ -54,22 +74,22 @@ class SkillsAPIClient(BaseLightcastClient):
         if subcategory:
             params["subcategory"] = subcategory
         
-        response = await self.get(f"skills/versions/{version}", params=params, version=version)
+        response = await self.get(f"skills/versions/{version}/skills", params=params, version=version)
         return [SkillSearchResult(**item) for item in response.get("data", [])]
     
     async def get_skill_by_id(
         self,
         skill_id: str,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> SkillDetail:
         """Get detailed information about a specific skill."""
-        response = await self.get(f"skills/versions/{version}/{skill_id}", version=version)
+        response = await self.get(f"skills/versions/{version}/skills/{skill_id}", version=version)
         return SkillDetail(**response.get("data", {}))
     
     async def get_skills_by_ids(
         self,
         skill_ids: List[str],
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> List[SkillDetail]:
         """Get detailed information about multiple skills."""
         data = {"ids": skill_ids}
@@ -80,16 +100,16 @@ class SkillsAPIClient(BaseLightcastClient):
         self,
         skill_id: str,
         limit: int = 10,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> List[SkillSearchResult]:
         """Get skills related to a specific skill."""
         params = {"limit": limit}
-        response = await self.get(f"skills/versions/{version}/{skill_id}/related", params=params, version=version)
+        response = await self.get(f"skills/versions/{version}/skills/{skill_id}/related", params=params, version=version)
         return [SkillSearchResult(**item) for item in response.get("data", [])]
     
     async def get_skills_metadata(
         self,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """Get metadata about the skills taxonomy."""
         response = await self.get(f"skills/versions/{version}/meta", version=version)
@@ -97,7 +117,7 @@ class SkillsAPIClient(BaseLightcastClient):
     
     async def get_skill_categories(
         self,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> List[Dict[str, str]]:
         """Get all skill categories and subcategories."""
         response = await self.get(f"skills/versions/{version}/categories", version=version)
@@ -107,7 +127,7 @@ class SkillsAPIClient(BaseLightcastClient):
         self,
         text: str,
         confidence_threshold: float = 0.5,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> List[Dict[str, Any]]:
         """Extract skills from a text description."""
         data = {
@@ -116,3 +136,30 @@ class SkillsAPIClient(BaseLightcastClient):
         }
         response = await self.post(f"skills/versions/{version}/extract", data=data, version=version)
         return response.get("data", [])
+    
+    async def get_version_metadata(
+        self,
+        version: str = "latest"
+    ) -> SkillsVersionMetadata:
+        """Get comprehensive metadata about a skills version."""
+        response = await self.get(f"skills/versions/{version}", version=version)
+        return SkillsVersionMetadata(**response.get("data", {}))
+    
+    async def bulk_retrieve_skills(
+        self,
+        skill_ids: List[str],
+        version: str = "latest"
+    ) -> List[SkillDetail]:
+        """Retrieve multiple skills by their IDs in a single request."""
+        data = {"ids": skill_ids}
+        response = await self.post(f"skills/versions/{version}/skills", data=data, version=version)
+        return [SkillDetail(**item) for item in response.get("data", [])]
+    
+    async def extract_skills_from_text_simple(
+        self,
+        text: str,
+        version: str = "latest"
+    ) -> List[ExtractedSkill]:
+        """Extract skills from text with default confidence threshold."""
+        response = await self.post(f"skills/versions/{version}/extract", data=text, version=version)
+        return [ExtractedSkill(**item) for item in response.get("data", [])]

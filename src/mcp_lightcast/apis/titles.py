@@ -30,6 +30,20 @@ class TitleNormalizationResult(BaseModel):
     type: Optional[str] = None
 
 
+class TitlesVersionMetadata(BaseModel):
+    """Titles version metadata."""
+    version: str
+    fields: List[str]
+    titleCount: int
+    removedTitleCount: int
+
+
+class TitlesGeneralMetadata(BaseModel):
+    """General titles metadata."""
+    attribution: Dict[str, Any]
+    latestVersion: str
+
+
 class TitlesAPIClient(BaseLightcastClient):
     """Client for Lightcast Titles API."""
     
@@ -37,32 +51,30 @@ class TitlesAPIClient(BaseLightcastClient):
         self,
         query: str,
         limit: int = 10,
-        offset: int = 0,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> List[TitleSearchResult]:
         """Search for titles by name."""
         params = {
             "q": query,
-            "limit": limit,
-            "offset": offset
+            "limit": limit
         }
         
-        response = await self.get(f"titles/versions/{version}", params=params, version=version)
+        response = await self.get(f"titles/versions/{version}/titles", params=params, version=version)
         return [TitleSearchResult(**item) for item in response.get("data", [])]
     
     async def get_title_by_id(
         self,
         title_id: str,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> TitleDetail:
         """Get detailed information about a specific title."""
-        response = await self.get(f"titles/versions/{version}/{title_id}", version=version)
+        response = await self.get(f"titles/versions/{version}/titles/{title_id}", version=version)
         return TitleDetail(**response.get("data", {}))
     
     async def normalize_title(
         self,
         raw_title: str,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> TitleNormalizationResult:
         """Normalize a raw job title string to the best matching Lightcast title."""
         response = await self.post(
@@ -75,16 +87,39 @@ class TitlesAPIClient(BaseLightcastClient):
     async def get_title_hierarchy(
         self,
         title_id: str,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """Get the hierarchical structure for a title."""
-        response = await self.get(f"titles/versions/{version}/{title_id}/hierarchy", version=version)
+        response = await self.get(f"titles/versions/{version}/titles/{title_id}/hierarchy", version=version)
         return response.get("data", {})
     
     async def get_titles_metadata(
         self,
-        version: str = "2023.4"
+        version: str = "latest"
     ) -> Dict[str, Any]:
         """Get metadata about the titles taxonomy."""
         response = await self.get(f"titles/versions/{version}/meta", version=version)
         return response.get("data", {})
+    
+    async def get_version_metadata(
+        self,
+        version: str = "latest"
+    ) -> TitlesVersionMetadata:
+        """Get comprehensive metadata about a titles version."""
+        response = await self.get(f"titles/versions/{version}", version=version)
+        return TitlesVersionMetadata(**response.get("data", {}))
+    
+    async def get_general_metadata(self) -> TitlesGeneralMetadata:
+        """Get general titles taxonomy metadata."""
+        response = await self.get("titles/meta")
+        return TitlesGeneralMetadata(**response.get("data", {}))
+    
+    async def bulk_retrieve_titles(
+        self,
+        title_ids: List[str],
+        version: str = "latest"
+    ) -> List[TitleDetail]:
+        """Retrieve multiple titles by their IDs in a single request."""
+        data = {"ids": title_ids}
+        response = await self.post(f"titles/versions/{version}/titles", data=data, version=version)
+        return [TitleDetail(**item) for item in response.get("data", [])]
