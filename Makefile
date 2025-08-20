@@ -168,27 +168,41 @@ build-dist: ## Build distribution packages
 check-dist: build-dist ## Check distribution packages
 	uv run twine check dist/*
 
-publish-test: check-dist ## Publish to Test PyPI
+publish-test: check-dist ## Publish to Test PyPI (loads .env file)
 	@echo "📦 Publishing to Test PyPI..."
-	@if [ -z "$$TWINE_PASSWORD" ]; then \
-		echo "❌ TWINE_PASSWORD not set. Please set your TestPyPI token:"; \
-		echo "export TWINE_USERNAME=__token__"; \
-		echo "export TWINE_PASSWORD=your-testpypi-token"; \
+	@if [ -f .env ]; then \
+		echo "📄 Loading environment variables from .env file..."; \
+		set -a && source .env && set +a; \
+	fi; \
+	token=$${TEST_PYPI_TOKEN:-$$TWINE_PASSWORD}; \
+	if [ -z "$$token" ]; then \
+		echo "❌ No PyPI token found. Please add to your .env file:"; \
+		echo "  TEST_PYPI_TOKEN=pypi-your-testpypi-token"; \
+		echo "  (or TWINE_PASSWORD=pypi-your-testpypi-token)"; \
 		exit 1; \
-	fi
-	TWINE_USERNAME=__token__ uv run twine upload --repository testpypi dist/*
+	fi; \
+	set -a && source .env 2>/dev/null && set +a; \
+	TWINE_USERNAME=__token__ TWINE_PASSWORD=$${TEST_PYPI_TOKEN:-$$TWINE_PASSWORD} \
+		uv run twine upload --repository testpypi dist/*
 	@echo "✅ Published to Test PyPI: https://test.pypi.org/project/mcp-lightcast/"
 
-publish-pypi: check-dist ## Publish to production PyPI
+publish-pypi: check-dist ## Publish to production PyPI (loads .env file)
 	@echo "🚀 Publishing to PyPI..."
-	@if [ -z "$$TWINE_PASSWORD" ]; then \
-		echo "❌ TWINE_PASSWORD not set. Please set your PyPI token:"; \
-		echo "export TWINE_USERNAME=__token__"; \
-		echo "export TWINE_PASSWORD=your-pypi-token"; \
+	@if [ -f .env ]; then \
+		echo "📄 Loading environment variables from .env file..."; \
+		set -a && source .env && set +a; \
+	fi; \
+	token=$${PYPI_TOKEN:-$$TWINE_PASSWORD}; \
+	if [ -z "$$token" ]; then \
+		echo "❌ No PyPI token found. Please add to your .env file:"; \
+		echo "  PYPI_TOKEN=pypi-your-production-token"; \
+		echo "  (or TWINE_PASSWORD=pypi-your-production-token)"; \
 		exit 1; \
-	fi
-	@read -p "Are you sure you want to publish to production PyPI? [y/N] " confirm && [[ $$confirm == [yY] ]] || exit 1
-	TWINE_USERNAME=__token__ uv run twine upload dist/*
+	fi; \
+	read -p "Are you sure you want to publish to production PyPI? [y/N] " confirm && [[ $$confirm == [yY] ]] || exit 1; \
+	set -a && source .env 2>/dev/null && set +a; \
+	TWINE_USERNAME=__token__ TWINE_PASSWORD=$${PYPI_TOKEN:-$$TWINE_PASSWORD} \
+		uv run twine upload dist/*
 	@echo "✅ Published to PyPI: https://pypi.org/project/mcp-lightcast/"
 
 release: ## Run the release script
