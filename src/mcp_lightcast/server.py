@@ -30,6 +30,11 @@ except ImportError:
 from .tools.titles_tools import register_titles_tools
 from .tools.skills_tools import register_skills_tools
 from .tools.workflow_tools import register_workflow_tools
+from .tools.classification_tools import register_classification_tools
+from .tools.similarity_tools import register_similarity_tools
+from .tools.occupation_benchmark_tools import register_occupation_benchmark_tools
+from .tools.career_pathways_tools import register_career_pathways_tools
+from .tools.job_postings_tools import register_job_postings_tools
 
 
 # Configure logging
@@ -56,6 +61,11 @@ mcp = FastMCP(
 register_titles_tools(mcp)
 register_skills_tools(mcp)
 register_workflow_tools(mcp)
+register_classification_tools(mcp)
+register_similarity_tools(mcp)
+register_occupation_benchmark_tools(mcp)
+register_career_pathways_tools(mcp)
+register_job_postings_tools(mcp)
 
 # Add server metadata
 @mcp.resource("lightcast://server/info")
@@ -70,6 +80,9 @@ async def server_info() -> dict:
             "Skills API - Skills search, categorization, and extraction",
             "Classification API - Concept mapping to occupation codes",
             "Similarity API - Occupation and skill similarity analysis",
+            "Occupation Benchmark API - Salary and employment benchmarks",
+            "Career Pathways API - Career pathway analysis and planning",
+            "Job Postings API - Job market insights and skill demand",
             "Workflow API - Combined title normalization and skills mapping"
         ],
         "authentication": "OAuth2 with client credentials",
