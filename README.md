@@ -1,39 +1,105 @@
 # MCP Lightcast Server
 
-[![CI/CD Pipeline](https://github.com/your-org/mcp-lightcast/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/your-org/mcp-lightcast/actions)
-[![Docker Pulls](https://img.shields.io/docker/pulls/mcp-lightcast/mcp-lightcast)](https://hub.docker.com/r/mcp-lightcast/mcp-lightcast)
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![PyPI Version](https://img.shields.io/pypi/v/mcp-lightcast)](https://pypi.org/project/mcp-lightcast/)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![CI/CD Pipeline](https://github.com/your-org/mcp-lightcast/workflows/Release/badge.svg)](https://github.com/your-org/mcp-lightcast/actions)
+[![API Coverage](https://img.shields.io/badge/API%20coverage-11/18%20endpoints-yellow)](TESTING_SUMMARY.md)
 
 A production-ready Model Context Protocol (MCP) server that provides seamless integration with Lightcast APIs for job titles, skills analysis, and career data. Built with FastMCP and modern Python development practices.
 
+**🎯 Current Status: v0.1.0 - Production Ready with 61% API Coverage (11/18 endpoints working)**
+
 ## 🚀 Features
 
-### Core APIs Implemented
+### ✅ **Working APIs & Endpoints (11/18 total)**
 
-- **🏷️ Titles API**: Job title search, normalization, and hierarchy analysis
-- **🎯 Skills API**: Skills search, categorization, and extraction from text
-- **📊 Classification API**: Map concepts to occupation codes (O*NET SOC)
-- **🔗 Similarity API**: Find similar occupations and skills, occupation-to-skills mapping
-- **⚡ Workflow API**: Combined title normalization and skills mapping
+#### **🎯 Skills API (6/10 endpoints)** - Version 9.33, 41,139 skills
+- ✅ **Skills Search** - Search with filters (type, category, subcategory)
+- ✅ **Individual Skill Retrieval** - Get detailed skill information by ID
+- ✅ **Skills Extraction from Text** - Extract skills from job descriptions with confidence scores
+- ✅ **Bulk Skills Retrieval** - Efficient batch processing of multiple skills
+- ✅ **Version Metadata** - Complete API version and statistics information
+- ✅ **Skills Metadata** - General skills taxonomy information
 
-### Key Tools
+#### **🏷️ Titles API (5/8 endpoints)** - Version 5.47, 73,993 titles
+- ✅ **Job Title Search** - Search Lightcast's comprehensive job title database
+- ✅ **Individual Title Retrieval** - Get detailed title information by ID
+- ✅ **Bulk Title Retrieval** - Efficient batch processing of multiple titles
+- ✅ **Version Metadata** - Complete API version and statistics information
+- ✅ **General Metadata** - Latest version and attribution information
 
-- **`normalize_title_and_get_skills`**: Complete workflow that normalizes job titles → maps to occupations → retrieves associated skills
-- **`get_title_skills_simple`**: Simplified version for quick skill extraction
-- **`analyze_job_posting_skills`**: Comprehensive job posting analysis combining title and description
-- **`search_job_titles`**: Search Lightcast's comprehensive job title database
-- **`search_skills`**: Search and filter skills by category and type with advanced filters
+### 🔧 **Core Functionality Working**
+- **🎯 Skills Extraction from Text** - High accuracy skill identification from job descriptions
+- **📊 Search & Discovery** - Fast, filtered search across both skills and titles taxonomies
+- **⚡ Bulk Operations** - Efficient processing of multiple items in single requests
+- **🔄 Version Management** - Uses "latest" keyword with backward compatibility
+- **🔐 OAuth2 Authentication** - Secure authentication with Lightcast APIs
+
+### ⚠️ **Limited/Premium Features**
+- ❌ **Title Normalization** - Requires premium authentication scope
+- ❌ **Skills Categories** - Endpoint not available in current API version
+- ❌ **Related Skills** - Endpoint pattern differs from documentation
+- ❌ **Title Hierarchy** - Endpoint pattern differs from documentation
+
+### 🛠️ **MCP Tools Available**
+
+#### **Skills Tools**
+- `search_skills` - Search skills with advanced filters
+- `get_skill_details` - Get detailed skill information
+- `extract_skills_from_text` - Extract skills with custom confidence threshold
+- `extract_skills_simple` - Extract skills with default settings
+- `bulk_retrieve_skills` - Efficient bulk skill retrieval
+- `get_skills_version_metadata` - API version information
+
+#### **Titles Tools**
+- `search_job_titles` - Search job titles
+- `get_job_title_details` - Get detailed title information
+- `bulk_retrieve_titles` - Efficient bulk title retrieval
+- `get_titles_version_metadata` - API version information
+- `get_titles_general_metadata` - General taxonomy information
+
+#### **Combined Workflow Tools**
+- `normalize_title_and_get_skills` - Complete workflow (where normalization is available)
+- `analyze_job_posting_skills` - Comprehensive job posting analysis using skills extraction
 
 ## 🛠️ Installation
 
 ### Prerequisites
 
-- Python 3.10+ (recommended: 3.12)
+- Python 3.12+ (required for uv-dynamic-versioning)
 - [uv](https://docs.astral.sh/uv/) package manager (recommended) or pip
-- Lightcast API credentials (Client ID and Secret)
+- Lightcast API credentials (Client ID and Secret with `emsi_open` scope)
 
-### Quick Start with uv (Recommended)
+### 🚀 Quick Start with uvx (Recommended)
+
+```bash
+# Install and run directly from PyPI (no installation required)
+uvx --from mcp-lightcast mcp-lightcast --help
+
+# Run with environment variables
+LIGHTCAST_CLIENT_ID=your_id LIGHTCAST_CLIENT_SECRET=your_secret \
+uvx --from mcp-lightcast mcp-lightcast
+
+# Use stdio transport for Claude Desktop
+LIGHTCAST_CLIENT_ID=your_id LIGHTCAST_CLIENT_SECRET=your_secret \
+uvx --from mcp-lightcast mcp-lightcast --transport stdio
+```
+
+### 📦 Install from PyPI
+
+```bash
+# Install globally
+pip install mcp-lightcast
+
+# Or with uv
+uv tool install mcp-lightcast
+
+# Run the server
+mcp-lightcast --help
+```
+
+### 🔧 Development Installation
 
 ```bash
 # 1. Clone the repository
@@ -53,56 +119,21 @@ make validate-config
 make run
 ```
 
-### Alternative Installation Methods
-
-<details>
-<summary>📦 Using Docker (Production Ready)</summary>
+### 🐳 Docker Installation
 
 ```bash
-# Pull the latest image
+# Pull the latest image (when available)
 docker pull ghcr.io/your-org/mcp-lightcast:latest
 
-# Run with environment file
-docker run --rm -it --env-file .env ghcr.io/your-org/mcp-lightcast:latest
-
-# Or with Docker Compose
-docker-compose up
-```
-
-</details>
-
-<details>
-<summary>🐍 Using uvx (Isolated Execution)</summary>
-
-```bash
-# Run directly without installation
-uvx --from mcp-lightcast mcp-lightcast --help
-
 # Run with environment variables
-LIGHTCAST_CLIENT_ID=xxx LIGHTCAST_CLIENT_SECRET=yyy uvx --from mcp-lightcast mcp-lightcast
+docker run --rm -it \
+  -e LIGHTCAST_CLIENT_ID=your_id \
+  -e LIGHTCAST_CLIENT_SECRET=your_secret \
+  ghcr.io/your-org/mcp-lightcast:latest
+
+# Or with environment file
+docker run --rm -it --env-file .env ghcr.io/your-org/mcp-lightcast:latest
 ```
-
-</details>
-
-<details>
-<summary>📦 Using pip</summary>
-
-```bash
-# Install from PyPI
-pip install mcp-lightcast
-
-# Or install from source
-pip install -e .
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your credentials
-
-# Run the server
-mcp-lightcast
-```
-
-</details>
 
 ## ⚙️ Configuration
 
@@ -263,144 +294,197 @@ make claude-config
 }
 ```
 
-### Available Tools
+### 🛠️ Available MCP Tools
 
-#### Workflow Tools
+#### **🎯 Skills Tools**
 
-**normalize_title_and_get_skills**
+**search_skills** - Search skills with advanced filters
 ```python
-# Complete workflow: normalize title → map to occupations → get skills
-result = await normalize_title_and_get_skills(
-    raw_title="sr software dev",
-    max_occupations=5,
-    max_skills_per_occupation=20,
+skills = await search_skills(
+    query="python programming",
+    limit=10,
     skill_type="Hard Skill",  # Optional: filter by skill type
-    confidence_threshold=0.5,
-    version="2023.4"
+    category="Information Technology",  # Optional: filter by category
+    version="latest"  # Uses latest API version
 )
 ```
 
-**get_title_skills_simple**
+**extract_skills_from_text** - Extract skills from job descriptions
 ```python
-# Simplified workflow for quick results
-result = await get_title_skills_simple(
-    raw_title="data scientist",
-    limit=50,
-    version="2023.4"
+# Extract skills with custom confidence threshold
+skills = await extract_skills_from_text(
+    text="Looking for Python developer with React and database experience...",
+    confidence_threshold=0.7,
+    version="latest"
 )
 ```
 
-**analyze_job_posting_skills**
+**extract_skills_simple** - Extract skills with default settings
 ```python
-# Analyze complete job posting
-result = await analyze_job_posting_skills(
-    job_title="Software Engineer",
-    job_description="Full job description text...",
-    extract_from_description=True,
-    merge_results=True
+# Quick skills extraction with default confidence (0.5)
+skills = await extract_skills_simple(
+    text="We need Java developers with Spring Boot experience",
+    version="latest"
 )
 ```
 
-#### Title Tools
-
-**search_job_titles**
+**bulk_retrieve_skills** - Efficient bulk skill retrieval
 ```python
-# Search job titles
+# Get multiple skills in one request
+skills = await bulk_retrieve_skills(
+    skill_ids=["KS125LS6N7WP4S6SFTCK", "KS440C66FGP5WGWYMP0F"],
+    version="latest"
+)
+```
+
+#### **🏷️ Titles Tools**
+
+**search_job_titles** - Search job titles
+```python
 titles = await search_job_titles(
     query="software engineer",
     limit=10,
-    offset=0
+    version="latest"
 )
 ```
 
-**normalize_job_title**
+**get_job_title_details** - Get detailed title information
 ```python
-# Normalize a raw job title
+title = await get_job_title_details(
+    title_id="ET6850661D6AE5FA86",
+    version="latest"
+)
+```
+
+**bulk_retrieve_titles** - Efficient bulk title retrieval
+```python
+titles = await bulk_retrieve_titles(
+    title_ids=["ET6850661D6AE5FA86", "ETBF8AE9187B3810C5"],
+    version="latest"
+)
+```
+
+#### **📊 Metadata Tools**
+
+**get_skills_version_metadata** - API version information
+```python
+metadata = await get_skills_version_metadata(version="latest")
+# Returns: version, skill_count, language_support, skill_types, etc.
+```
+
+**get_titles_version_metadata** - API version information  
+```python
+metadata = await get_titles_version_metadata(version="latest")
+# Returns: version, title_count, removed_title_count, fields
+```
+
+#### **⚠️ Limited Availability Tools**
+Some tools require premium authentication scopes or have endpoint limitations:
+
+**normalize_job_title** - ❌ Requires premium scope
+```python
+# Currently returns 401 Unauthorized with emsi_open scope
 result = await normalize_job_title("sr software dev")
 ```
 
-#### Skills Tools
-
-**search_skills**
+**analyze_job_posting_skills** - ✅ Working via skills extraction
 ```python
-# Search skills with filters
-skills = await search_skills(
-    query="python",
-    skill_type="Hard Skill",
-    category="Information Technology",
-    limit=10
+# Uses skills extraction instead of normalization
+result = await analyze_job_posting_skills(
+    job_title="Software Engineer",
+    job_description="Full job description text...",
+    extract_from_description=True  # Uses working skills extraction
 )
 ```
 
-**extract_skills_from_text**
-```python
-# Extract skills from job description
-skills = await extract_skills_from_text(
-    text="Looking for Python developer with React experience...",
-    confidence_threshold=0.5
-)
-```
+### 🎯 Example Workflows
 
-### Example Workflows
-
-#### 1. Analyze a Job Title for Required Skills
+#### **1. Extract Skills from Job Description**
 
 ```python
-# Get comprehensive skills for a job title
-result = await normalize_title_and_get_skills("Machine Learning Engineer")
-
-print(f"Normalized Title: {result['normalized_title']['name']}")
-print(f"Confidence: {result['normalized_title']['confidence']}")
-print(f"Related Occupations: {[occ['occupation_name'] for occ in result['occupation_mappings']]}")
-print(f"Skills Found: {len(result['skills'])}")
-
-for skill in result['skills'][:10]:  # Top 10 skills
-    print(f"- {skill['name']} ({skill.get('type', 'Unknown')})")
-```
-
-#### 2. Compare Skills Requirements Across Job Titles
-
-```python
-# Compare different job titles
-titles = ["Data Scientist", "Machine Learning Engineer", "Software Engineer"]
-all_results = {}
-
-for title in titles:
-    result = await get_title_skills_simple(title, limit=30)
-    all_results[title] = set(skill['name'] for skill in result['skills'])
-
-# Find common skills
-common_skills = set.intersection(*all_results.values())
-print(f"Common skills across all roles: {common_skills}")
-```
-
-#### 3. Analyze Job Posting
-
-```python
-job_description = \"\"\"
+# Analyze a job posting to extract relevant skills
+job_description = """
 We're looking for a Senior Software Engineer with expertise in Python, 
 React, and cloud technologies. Experience with Docker, Kubernetes, 
 and AWS is required. Strong communication skills and team collaboration 
 abilities are essential.
-\"\"\"
+"""
 
-result = await analyze_job_posting_skills(
-    job_title="Senior Software Engineer",
-    job_description=job_description,
-    extract_from_description=True,
-    merge_results=True
+# Extract skills with high confidence
+skills = await extract_skills_from_text(
+    text=job_description,
+    confidence_threshold=0.8,
+    version="latest"
 )
 
-print(f"Title-based skills: {len(result['title_based_skills'])}")
-print(f"Description-extracted skills: {len(result['description_extracted_skills'])}")
-print(f"Merged unique skills: {len(result['merged_skills'])}")
+print(f"High-confidence skills found: {len(skills)}")
+for skill in skills:
+    print(f"- {skill['name']} (confidence: {skill['confidence']:.2f})")
+```
+
+#### **2. Compare Skills Across Job Titles**
+
+```python
+# Search and compare skills requirements for different roles
+titles = ["Data Scientist", "Machine Learning Engineer", "Software Engineer"]
+title_skills = {}
+
+for title in titles:
+    # Search for the title
+    title_results = await search_job_titles(query=title, limit=1)
+    if title_results:
+        title_id = title_results[0]['id']
+        
+        # Get detailed title information  
+        title_details = await get_job_title_details(title_id)
+        title_skills[title] = title_details
+        
+print("Job title comparison completed")
+```
+
+#### **3. Bulk Skills Analysis**
+
+```python
+# Efficiently analyze multiple skills at once
+skill_names = ["Python", "JavaScript", "Machine Learning", "Docker"]
+
+# First search for skill IDs
+skill_ids = []
+for name in skill_names:
+    results = await search_skills(query=name, limit=1)
+    if results:
+        skill_ids.append(results[0]['id'])
+
+# Get detailed information for all skills in one request
+if skill_ids:
+    detailed_skills = await bulk_retrieve_skills(skill_ids)
+    
+    for skill in detailed_skills:
+        print(f"Skill: {skill['name']}")
+        print(f"Type: {skill.get('type', {}).get('name', 'Unknown')}")
+        print(f"Category: {skill.get('category', 'Unknown')}")
+        print("---")
+```
+
+#### **4. API Version and Statistics**
+
+```python
+# Get comprehensive API information
+skills_meta = await get_skills_version_metadata()
+titles_meta = await get_titles_version_metadata()
+
+print(f"Skills API v{skills_meta['version']}: {skills_meta['skill_count']:,} skills")
+print(f"Languages: {', '.join(skills_meta['language_support'])}")
+print(f"Skill types: {len(skills_meta['skill_types'])}")
+
+print(f"Titles API v{titles_meta['version']}: {titles_meta['title_count']:,} titles")
 ```
 
 ## 🧪 Development
 
 ### Prerequisites
 
-- Python 3.10+ (recommended: 3.12)
+- Python 3.12+ (required)
 - [uv](https://docs.astral.sh/uv/) package manager
 - Docker (for containerized development)
 - Make (for development commands)
@@ -547,17 +631,52 @@ search_job_titles("software engineer", version="5.47")
 search_skills("python", version="9.32")
 ```
 
-**Current Latest Versions:**
-- Titles API: `5.47+` (uses `"latest"`)
-- Skills API: `9.33+` (uses `"latest"`)
+**Current API Versions:**
+- Skills API: `9.33` with 41,139 skills (English, Spanish, French support)
+- Titles API: `5.47` with 73,993 titles
+- Both APIs use `"latest"` keyword for automatic version management
 
-## Future Enhancements
+## 📈 Current Limitations & Future Enhancements
 
-The following APIs are planned for future implementation:
+### ⚠️ **Known Limitations (v0.1.0)**
 
+#### **Authentication Scope Limitations**
+- **Title Normalization**: Requires premium authentication scope (currently 401 Unauthorized)
+- **Skills Categories**: Endpoint not available in current API tier
+- **Related Skills**: Endpoint pattern differs from documentation
+
+#### **Endpoint Coverage**
+- **61% Coverage**: 11 out of 18 planned endpoints working
+- **Core Functionality**: ✅ All essential features (search, extraction, bulk ops) working
+- **Premium Features**: ❌ Some advanced features require paid Lightcast tiers
+
+### 🚀 **Planned Enhancements**
+
+#### **Additional Lightcast APIs** 
+- **Classification API**: Map concepts to occupation codes (O*NET SOC)
+- **Similarity API**: Find similar occupations and skills
 - **Occupation Benchmark API**: Industry benchmarking and compensation data
 - **Career Pathways API**: Career progression and pathway analysis
 - **Job Postings API**: Real-time job market data and trends
+
+#### **Feature Improvements**
+- **Premium Authentication**: Support for advanced Lightcast scopes
+- **Enhanced Error Handling**: Better handling of rate limits and API errors
+- **Caching Layer**: Response caching for improved performance
+- **Additional Export Formats**: CSV, JSON, XML output options
+
+### 📊 **Production Readiness**
+
+✅ **Ready for Production Use:**
+- Skills extraction from job descriptions
+- Skills and titles search functionality
+- Bulk data retrieval operations
+- API version management and metadata
+
+⚠️ **Requires Premium Lightcast Access:**
+- Job title normalization workflows
+- Skills categorization features
+- Advanced relationship mapping
 
 ## Contributing
 
@@ -571,10 +690,26 @@ The following APIs are planned for future implementation:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+## 📚 Documentation & Support
 
-- [Lightcast API Documentation](https://docs.lightcast.dev/)
-- [FastMCP Documentation](https://gofastmcp.com/)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
+### **API Documentation**
+- [Lightcast API Documentation](https://docs.lightcast.dev/) - Official Lightcast API reference
+- [FastMCP Documentation](https://gofastmcp.com/) - FastMCP framework documentation  
+- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
+- [Testing Summary](TESTING_SUMMARY.md) - Comprehensive endpoint testing results
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/your-org/mcp-lightcast/issues) page.
+### **Project Resources**
+- [PyPI Package](https://pypi.org/project/mcp-lightcast/) - Official Python package
+- [GitHub Repository](https://github.com/your-org/mcp-lightcast) - Source code and issues
+- [GitHub Releases](https://github.com/your-org/mcp-lightcast/releases) - Version history and changelog
+
+### **Getting Help**
+- **Issues**: [GitHub Issues](https://github.com/your-org/mcp-lightcast/issues) for bugs and feature requests
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/mcp-lightcast/discussions) for questions and community support
+- **Lightcast Support**: [Contact Lightcast](https://docs.lightcast.dev/contact) for API access and credentials
+
+### **Current Status**
+- **Version**: 0.1.0 (Production Ready)
+- **API Coverage**: 11/18 endpoints (61%)
+- **Python**: 3.12+ required
+- **License**: MIT
