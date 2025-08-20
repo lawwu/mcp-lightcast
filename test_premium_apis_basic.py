@@ -29,11 +29,11 @@ async def test_basic_functionality():
     
     # Test each premium API client
     premium_apis = [
-        ("Classification", ClassificationAPIClient, "classification_api"),
-        ("Similarity", SimilarityAPIClient, "similarity_api"),
-        ("Occupation Benchmark", OccupationBenchmarkAPIClient, "occupation_benchmark_api"),
-        ("Career Pathways", CareerPathwaysAPIClient, "career_pathways_api"),
-        ("Job Postings", JobPostingsAPIClient, "job_postings_api"),
+        ("Classification", ClassificationAPIClient, "classification_api"),  # Still need to confirm this one
+        ("Similarity", SimilarityAPIClient, "similarity"),
+        ("Occupation Benchmark", OccupationBenchmarkAPIClient, "occupation-benchmark"),
+        ("Career Pathways", CareerPathwaysAPIClient, "career-pathways"),
+        ("Job Postings", JobPostingsAPIClient, "postings:us"),
     ]
     
     for api_name, client_class, expected_scope in premium_apis:

@@ -147,11 +147,11 @@ async def debug_authentication():
     # Step 4: Test premium scope tokens
     print("\n🔐 Step 4: Testing Premium Scope Tokens...")
     premium_scopes = [
-        "classification_api",
-        "similarity_api",
-        "occupation_benchmark_api",
-        "career_pathways_api",
-        "job_postings_api"
+        "classification_api",  # Still need to confirm this one
+        "similarity",
+        "occupation-benchmark", 
+        "career-pathways",
+        "postings:us"
     ]
     
     for scope in premium_scopes:

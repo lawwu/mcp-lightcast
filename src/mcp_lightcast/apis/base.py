@@ -55,11 +55,11 @@ class BaseLightcastClient(ABC):
     API_SCOPES = {
         "skills": "emsi_open",
         "titles": "emsi_open", 
-        "classification": "classification_api",
-        "similarity": "similarity_api",
-        "occupation_benchmark": "occupation_benchmark_api",
-        "career_pathways": "career_pathways_api",
-        "job_postings": "job_postings_api"
+        "classification": "classification_api",  # Still need to confirm this one
+        "similarity": "similarity",
+        "occupation_benchmark": "occupation-benchmark",
+        "career_pathways": "career-pathways",
+        "job_postings": "postings:us"
     }
     
     def __init__(self, api_name: Optional[str] = None):
