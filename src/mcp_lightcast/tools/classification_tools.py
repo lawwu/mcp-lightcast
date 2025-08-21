@@ -1,6 +1,7 @@
 """MCP tools for Lightcast Classification API."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from fastmcp import FastMCP
 
 from ..apis.classification import ClassificationAPIClient
@@ -8,14 +9,14 @@ from ..apis.classification import ClassificationAPIClient
 
 def register_classification_tools(mcp: FastMCP):
     """Register all classification-related MCP tools."""
-    
+
     @mcp.tool
     async def map_concepts_to_occupations(
-        concepts: List[str],
+        concepts: list[str],
         limit: int = 10,
         confidence_threshold: float = 0.5,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Map concepts to relevant occupations using the Classification API.
         
@@ -46,12 +47,12 @@ def register_classification_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def normalize_job_title(
         title: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Normalize a job title to standard occupation classification.
         
@@ -70,13 +71,13 @@ def register_classification_tools(mcp: FastMCP):
                 "confidence": result.confidence,
                 "alternatives": result.alternatives
             }
-    
+
     @mcp.tool
     async def extract_skills_from_description(
         description: str,
         confidence_threshold: float = 0.6,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extract skills from job description text using Classification API.
         
@@ -94,12 +95,12 @@ def register_classification_tools(mcp: FastMCP):
                 "extracted_skills": result.extracted_skills,
                 "confidence_scores": result.confidence_scores
             }
-    
+
     @mcp.tool
     async def classify_occupation_level(
         occupation_title: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Classify occupation by level (entry, mid, senior, etc.).
         
@@ -112,12 +113,12 @@ def register_classification_tools(mcp: FastMCP):
         """
         async with ClassificationAPIClient() as client:
             return await client.classify_occupation_level(occupation_title, version)
-    
+
     @mcp.tool
     async def get_occupation_hierarchy(
         soc_code: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get occupation hierarchy for a SOC code.
         
@@ -130,14 +131,14 @@ def register_classification_tools(mcp: FastMCP):
         """
         async with ClassificationAPIClient() as client:
             return await client.get_occupation_hierarchy(soc_code, version)
-    
+
     @mcp.tool
     async def search_occupations(
         query: str,
         limit: int = 20,
-        soc_level: Optional[int] = None,
+        soc_level: int | None = None,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search occupations by query.
         
@@ -152,12 +153,12 @@ def register_classification_tools(mcp: FastMCP):
         """
         async with ClassificationAPIClient() as client:
             return await client.search_occupations(query, limit, soc_level, version)
-    
+
     @mcp.tool
     async def validate_soc_code(
         soc_code: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate a SOC code and get its details.
         
@@ -170,11 +171,11 @@ def register_classification_tools(mcp: FastMCP):
         """
         async with ClassificationAPIClient() as client:
             return await client.validate_soc_code(soc_code, version)
-    
+
     @mcp.tool
     async def get_soc_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get SOC (Standard Occupational Classification) metadata.
         
@@ -186,11 +187,11 @@ def register_classification_tools(mcp: FastMCP):
         """
         async with ClassificationAPIClient() as client:
             return await client.get_soc_metadata(version)
-    
+
     @mcp.tool
     async def get_classification_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get Classification API metadata and version information.
         

@@ -1,6 +1,7 @@
 """MCP tools for Lightcast Similarity API."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from fastmcp import FastMCP
 
 from ..apis.similarity import SimilarityAPIClient
@@ -8,14 +9,14 @@ from ..apis.similarity import SimilarityAPIClient
 
 def register_similarity_tools(mcp: FastMCP):
     """Register all similarity-related MCP tools."""
-    
+
     @mcp.tool
     async def find_similar_occupations(
         occupation_id: str,
         limit: int = 10,
         similarity_threshold: float = 0.5,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Find occupations similar to a given occupation.
         
@@ -39,14 +40,14 @@ def register_similarity_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def find_similar_skills(
         skill_id: str,
         limit: int = 10,
         similarity_threshold: float = 0.5,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Find skills similar to a given skill.
         
@@ -70,14 +71,14 @@ def register_similarity_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_occupation_skills(
         occupation_id: str,
         limit: int = 100,
-        skill_type: Optional[str] = None,
+        skill_type: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get skills associated with an occupation.
         
@@ -98,14 +99,14 @@ def register_similarity_tools(mcp: FastMCP):
                 "skills": result.skills,
                 "total_skills": result.total_skills
             }
-    
+
     @mcp.tool
     async def find_occupations_by_skills(
-        skill_ids: List[str],
+        skill_ids: list[str],
         limit: int = 10,
         match_threshold: float = 0.5,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Find occupations that match a set of skills.
         
@@ -129,13 +130,13 @@ def register_similarity_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def calculate_skill_gaps(
-        current_skills: List[str],
+        current_skills: list[str],
         target_occupation_id: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calculate skill gaps between current skills and target occupation.
         
@@ -149,13 +150,13 @@ def register_similarity_tools(mcp: FastMCP):
         """
         async with SimilarityAPIClient() as client:
             return await client.calculate_skill_gaps(current_skills, target_occupation_id, version)
-    
+
     @mcp.tool
     async def compare_occupations(
         occupation_id_1: str,
         occupation_id_2: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Compare two occupations and their skill overlap.
         
@@ -169,13 +170,13 @@ def register_similarity_tools(mcp: FastMCP):
         """
         async with SimilarityAPIClient() as client:
             return await client.compare_occupations(occupation_id_1, occupation_id_2, version)
-    
+
     @mcp.tool
     async def get_skill_transferability(
         from_occupation_id: str,
         to_occupation_id: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get skill transferability between two occupations.
         
@@ -189,13 +190,13 @@ def register_similarity_tools(mcp: FastMCP):
         """
         async with SimilarityAPIClient() as client:
             return await client.get_skill_transferability(from_occupation_id, to_occupation_id, version)
-    
+
     @mcp.tool
     async def rank_occupations_by_similarity(
         target_occupation_id: str,
-        candidate_occupation_ids: List[str],
+        candidate_occupation_ids: list[str],
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Rank a list of occupations by similarity to a target occupation.
         
@@ -218,15 +219,15 @@ def register_similarity_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_career_transitions(
         from_occupation_id: str,
-        difficulty_level: Optional[str] = None,
-        industry_filter: Optional[List[str]] = None,
+        difficulty_level: str | None = None,
+        industry_filter: list[str] | None = None,
         limit: int = 20,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get potential career transitions from a given occupation.
         
@@ -242,14 +243,14 @@ def register_similarity_tools(mcp: FastMCP):
         """
         async with SimilarityAPIClient() as client:
             return await client.get_career_transitions(from_occupation_id, difficulty_level, industry_filter, limit, version)
-    
+
     @mcp.tool
     async def find_skill_substitutes(
         skill_id: str,
-        context_occupation_id: Optional[str] = None,
+        context_occupation_id: str | None = None,
         limit: int = 10,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Find substitute skills that can replace a given skill.
         
@@ -273,11 +274,11 @@ def register_similarity_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_similarity_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get Similarity API metadata and version information.
         

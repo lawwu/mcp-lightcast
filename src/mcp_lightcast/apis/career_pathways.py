@@ -1,7 +1,8 @@
 """Lightcast Career Pathways API client."""
 
-from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel
 
 from .base import BaseLightcastClient
 
@@ -10,11 +11,11 @@ class CareerStep(BaseModel):
     """Career step model."""
     occupation_id: str
     occupation_title: str
-    soc_code: Optional[str] = None
+    soc_code: str | None = None
     step_order: int
-    transition_probability: Optional[float] = None
-    required_skills: Optional[List[str]] = None
-    median_duration: Optional[int] = None  # months
+    transition_probability: float | None = None
+    required_skills: list[str] | None = None
+    median_duration: int | None = None  # months
 
 
 class CareerPathway(BaseModel):
@@ -23,10 +24,10 @@ class CareerPathway(BaseModel):
     pathway_name: str
     starting_occupation: CareerStep
     target_occupation: CareerStep
-    intermediate_steps: List[CareerStep]
-    total_duration: Optional[int] = None  # months
-    difficulty_score: Optional[float] = None
-    success_rate: Optional[float] = None
+    intermediate_steps: list[CareerStep]
+    total_duration: int | None = None  # months
+    difficulty_score: float | None = None
+    success_rate: float | None = None
 
 
 class SkillGap(BaseModel):
@@ -35,16 +36,16 @@ class SkillGap(BaseModel):
     skill_name: str
     gap_type: str  # "missing", "upgrade", "new"
     importance: float
-    training_time: Optional[int] = None  # hours
+    training_time: int | None = None  # hours
 
 
 class PathwayAnalysis(BaseModel):
     """Pathway analysis result."""
     from_occupation_id: str
     to_occupation_id: str
-    pathways: List[CareerPathway]
-    skill_gaps: List[SkillGap]
-    recommended_training: Optional[List[Dict[str, Any]]] = None
+    pathways: list[CareerPathway]
+    skill_gaps: list[SkillGap]
+    recommended_training: list[dict[str, Any]] | None = None
 
 
 class IndustryTransition(BaseModel):
@@ -55,17 +56,17 @@ class IndustryTransition(BaseModel):
     to_industry_name: str
     transition_volume: int
     success_rate: float
-    median_salary_change: Optional[float] = None
+    median_salary_change: float | None = None
 
 
 class CareerPathwaysAPIClient(BaseLightcastClient):
     """Client for Lightcast Career Pathways API."""
-    
+
     def __init__(self):
         super().__init__(api_name="career_pathways")
-    
+
     # Working endpoints discovered from testing
-    async def get_api_metadata(self) -> Dict[str, Any]:
+    async def get_api_metadata(self) -> dict[str, Any]:
         """
         Get comprehensive API metadata including model versions and supported taxonomies.
         
@@ -74,8 +75,8 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         """
         response = await self.get("meta")
         return response.get("data", {})
-    
-    async def get_api_status(self) -> Dict[str, Any]:
+
+    async def get_api_status(self) -> dict[str, Any]:
         """
         Get API health status.
         
@@ -84,7 +85,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         """
         response = await self.get("status")
         return response.get("data", {})
-    
+
     async def get_api_documentation(self) -> str:
         """
         Get API documentation.
@@ -94,8 +95,8 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         """
         response = await self.get("docs")
         return response if isinstance(response, str) else str(response)
-    
-    async def get_available_dimensions(self) -> List[str]:
+
+    async def get_available_dimensions(self) -> list[str]:
         """
         Get list of available dimensions (taxonomies).
         
@@ -104,11 +105,11 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         """
         response = await self.get("dimensions")
         return response.get("data", [])
-    
+
     async def get_dimension_info(
         self,
         dimension: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get information about a specific dimension (taxonomy).
         
@@ -120,30 +121,30 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         """
         response = await self.get(f"dimensions/{dimension}")
         return response.get("data", {})
-    
-    async def get_soc_dimension(self) -> Dict[str, Any]:
+
+    async def get_soc_dimension(self) -> dict[str, Any]:
         """Get SOC (Standard Occupation Classification) dimension information."""
         return await self.get_dimension_info("soc")
-    
-    async def get_onet_dimension(self) -> Dict[str, Any]:
+
+    async def get_onet_dimension(self) -> dict[str, Any]:
         """Get O*NET dimension information."""
         return await self.get_dimension_info("onet")
-    
-    async def get_lotocc_dimension(self) -> Dict[str, Any]:
+
+    async def get_lotocc_dimension(self) -> dict[str, Any]:
         """Get LOT Occupation dimension information."""
         return await self.get_dimension_info("lotocc")
-    
-    async def get_lotspecocc_dimension(self) -> Dict[str, Any]:
+
+    async def get_lotspecocc_dimension(self) -> dict[str, Any]:
         """Get LOT Specialized Occupation dimension information."""
         return await self.get_dimension_info("lotspecocc")
-    
+
     async def analyze_career_pathway(
         self,
         from_occupation_id: str,
         to_occupation_id: str,
         max_steps: int = 3,
         include_skill_analysis: bool = True,
-        region: Optional[str] = None,
+        region: str | None = None,
         version: str = "latest"
     ) -> PathwayAnalysis:
         """
@@ -168,15 +169,15 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         }
         if region:
             data["region"] = region
-        
+
         response = await self.post(
             f"pathways/versions/{version}/analyze",
             data=data,
             version=version
         )
-        
+
         result_data = response.get("data", {})
-        
+
         # Parse pathways
         pathways = []
         for pathway_data in result_data.get("pathways", []):
@@ -191,7 +192,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
                     required_skills=step_data.get("required_skills"),
                     median_duration=step_data.get("duration_months")
                 ))
-            
+
             pathways.append(CareerPathway(
                 pathway_id=pathway_data["id"],
                 pathway_name=pathway_data["name"],
@@ -202,7 +203,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
                 difficulty_score=pathway_data.get("difficulty"),
                 success_rate=pathway_data.get("success_rate")
             ))
-        
+
         # Parse skill gaps
         skill_gaps = []
         for gap_data in result_data.get("skill_gaps", []):
@@ -213,7 +214,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
                 importance=gap_data["importance"],
                 training_time=gap_data.get("training_hours")
             ))
-        
+
         return PathwayAnalysis(
             from_occupation_id=from_occupation_id,
             to_occupation_id=to_occupation_id,
@@ -221,16 +222,16 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
             skill_gaps=skill_gaps,
             recommended_training=result_data.get("training_recommendations")
         )
-    
+
     async def discover_career_pathways(
         self,
         occupation_id: str,
         pathway_type: str = "advancement",
-        career_level: Optional[str] = None,
-        industry_filter: Optional[List[str]] = None,
+        career_level: str | None = None,
+        industry_filter: list[str] | None = None,
         limit: int = 20,
         version: str = "latest"
-    ) -> List[CareerPathway]:
+    ) -> list[CareerPathway]:
         """
         Discover potential career pathways from a given occupation.
         
@@ -253,13 +254,13 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
             params["career_level"] = career_level
         if industry_filter:
             params["industries"] = ",".join(industry_filter)
-        
+
         response = await self.get(
             f"pathways/versions/{version}/occupations/{occupation_id}/discover",
             params=params,
             version=version
         )
-        
+
         pathways = []
         for pathway_data in response.get("data", []):
             # Create career steps
@@ -274,7 +275,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
                     required_skills=step_data.get("required_skills"),
                     median_duration=step_data.get("duration_months")
                 ))
-            
+
             pathways.append(CareerPathway(
                 pathway_id=pathway_data["id"],
                 pathway_name=pathway_data["name"],
@@ -285,16 +286,16 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
                 difficulty_score=pathway_data.get("difficulty"),
                 success_rate=pathway_data.get("success_rate")
             ))
-        
+
         return pathways
-    
+
     async def get_skill_transition_map(
         self,
         from_occupation_id: str,
         to_occupation_id: str,
-        skill_level: Optional[str] = None,
+        skill_level: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed skill transition mapping between occupations.
         
@@ -310,23 +311,23 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         params = {}
         if skill_level:
             params["skill_level"] = skill_level
-        
+
         response = await self.get(
             f"pathways/versions/{version}/skills/transition/{from_occupation_id}/{to_occupation_id}",
             params=params,
             version=version
         )
         return response.get("data", {})
-    
+
     async def analyze_industry_transitions(
         self,
-        from_industry_ids: Optional[List[str]] = None,
-        to_industry_ids: Optional[List[str]] = None,
-        time_period: Optional[str] = None,
-        region: Optional[str] = None,
+        from_industry_ids: list[str] | None = None,
+        to_industry_ids: list[str] | None = None,
+        time_period: str | None = None,
+        region: str | None = None,
         limit: int = 50,
         version: str = "latest"
-    ) -> List[IndustryTransition]:
+    ) -> list[IndustryTransition]:
         """
         Analyze career transitions between industries.
         
@@ -350,13 +351,13 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
             data["time_period"] = time_period
         if region:
             data["region"] = region
-        
+
         response = await self.post(
             f"pathways/versions/{version}/industries/transitions",
             data=data,
             version=version
         )
-        
+
         transitions = []
         for item in response.get("data", []):
             transitions.append(IndustryTransition(
@@ -368,18 +369,18 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
                 success_rate=item["success_rate"],
                 median_salary_change=item.get("salary_change")
             ))
-        
+
         return transitions
-    
+
     async def get_pathway_recommendations(
         self,
         current_occupation_id: str,
-        career_goals: List[str],
-        skills_inventory: Optional[List[str]] = None,
-        time_horizon: Optional[int] = None,
-        region: Optional[str] = None,
+        career_goals: list[str],
+        skills_inventory: list[str] | None = None,
+        time_horizon: int | None = None,
+        region: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get personalized career pathway recommendations.
         
@@ -404,20 +405,20 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
             data["time_horizon"] = time_horizon
         if region:
             data["region"] = region
-        
+
         response = await self.post(
             f"pathways/versions/{version}/recommendations",
             data=data,
             version=version
         )
         return response.get("data", {})
-    
+
     async def validate_pathway_feasibility(
         self,
-        pathway_steps: List[str],
-        constraints: Optional[Dict[str, Any]] = None,
+        pathway_steps: list[str],
+        constraints: dict[str, Any] | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate the feasibility of a custom career pathway.
         
@@ -432,22 +433,22 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         data = {"pathway_steps": pathway_steps}
         if constraints:
             data["constraints"] = constraints
-        
+
         response = await self.post(
             f"pathways/versions/{version}/validate",
             data=data,
             version=version
         )
         return response.get("data", {})
-    
+
     async def get_trending_pathways(
         self,
-        industry_id: Optional[str] = None,
-        region: Optional[str] = None,
-        time_period: Optional[str] = None,
+        industry_id: str | None = None,
+        region: str | None = None,
+        time_period: str | None = None,
         limit: int = 20,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get trending career pathways based on recent data.
         
@@ -468,18 +469,18 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
             params["region"] = region
         if time_period:
             params["time_period"] = time_period
-        
+
         response = await self.get(
             f"pathways/versions/{version}/trending",
             params=params,
             version=version
         )
         return response.get("data", [])
-    
+
     async def get_pathways_metadata(
         self,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get Career Pathways API metadata and version information.
         
@@ -494,3 +495,68 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
             version=version
         )
         return response.get("data", {})
+
+    async def get_pathway_analysis(
+        self,
+        from_occupation_id: str,
+        to_occupation_id: str,
+        max_steps: int = 3,
+        include_skill_analysis: bool = True,
+        region: str | None = None,
+        version: str = "latest"
+    ) -> dict[str, Any]:
+        """
+        Alias for analyze_career_pathway that returns raw data.
+        """
+        result = await self.analyze_career_pathway(
+            from_occupation_id=from_occupation_id,
+            to_occupation_id=to_occupation_id,
+            max_steps=max_steps,
+            include_skill_analysis=include_skill_analysis,
+            region=region,
+            version=version
+        )
+        return {
+            "from_occupation_id": result.from_occupation_id,
+            "to_occupation_id": result.to_occupation_id,
+            "pathways": [
+                {
+                    "pathway_id": pathway.pathway_id,
+                    "pathway_name": pathway.pathway_name,
+                    "starting_occupation": {
+                        "occupation_id": pathway.starting_occupation.occupation_id,
+                        "occupation_title": pathway.starting_occupation.occupation_title,
+                        "soc_code": pathway.starting_occupation.soc_code
+                    } if pathway.starting_occupation else None,
+                    "target_occupation": {
+                        "occupation_id": pathway.target_occupation.occupation_id,
+                        "occupation_title": pathway.target_occupation.occupation_title,
+                        "soc_code": pathway.target_occupation.soc_code
+                    } if pathway.target_occupation else None,
+                    "intermediate_steps": [
+                        {
+                            "occupation_id": step.occupation_id,
+                            "occupation_title": step.occupation_title,
+                            "soc_code": step.soc_code,
+                            "step_order": step.step_order
+                        }
+                        for step in pathway.intermediate_steps
+                    ],
+                    "total_duration": pathway.total_duration,
+                    "difficulty_score": pathway.difficulty_score,
+                    "success_rate": pathway.success_rate
+                }
+                for pathway in result.pathways
+            ],
+            "skill_gaps": [
+                {
+                    "skill_id": gap.skill_id,
+                    "skill_name": gap.skill_name,
+                    "gap_type": gap.gap_type,
+                    "importance": gap.importance,
+                    "training_time": gap.training_time
+                }
+                for gap in result.skill_gaps
+            ],
+            "recommended_training": result.recommended_training
+        }

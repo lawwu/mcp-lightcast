@@ -4,6 +4,7 @@ import asyncio
 import logging
 import sys
 from pathlib import Path
+
 from fastmcp import FastMCP
 
 # Add the project root to the Python path so we can import config
@@ -14,29 +15,27 @@ try:
     from config.settings import server_config
 except ImportError:
     # Fallback for when config module is not in the path
-    import os
+    from pydantic import ConfigDict, Field
     from pydantic_settings import BaseSettings
-    from pydantic import Field, ConfigDict
-    
+
     class ServerConfig(BaseSettings):
         model_config = ConfigDict(extra="ignore")
-        
+
         server_name: str = Field(default="lightcast-mcp-server", alias="MCP_SERVER_NAME")
         log_level: str = Field(default="INFO", alias="LOG_LEVEL")
         mask_error_details: bool = Field(default=True, alias="MASK_ERROR_DETAILS")
-    
+
     server_config = ServerConfig()
 
-from .tools.titles_tools import register_titles_tools
-from .tools.skills_tools import register_skills_tools
-from .tools.workflow_tools import register_workflow_tools
-from .tools.classification_tools import register_classification_tools
-from .tools.similarity_tools import register_similarity_tools
-from .tools.occupation_benchmark_tools import register_occupation_benchmark_tools
 from .tools.career_pathways_tools import register_career_pathways_tools
+from .tools.classification_tools import register_classification_tools
 from .tools.job_postings_tools import register_job_postings_tools
+from .tools.occupation_benchmark_tools import register_occupation_benchmark_tools
+from .tools.similarity_tools import register_similarity_tools
+from .tools.skills_tools import register_skills_tools
+from .tools.titles_tools import register_titles_tools
 from .tools.unified_skills_tools import register_unified_skills_tools
-
+from .tools.workflow_tools import register_workflow_tools
 
 # Configure logging
 logging.basicConfig(
@@ -97,10 +96,10 @@ async def health_check() -> dict:
     try:
         # Test basic functionality
         from src.mcp_lightcast.auth.oauth import lightcast_auth
-        
+
         # Try to get a token (this validates our auth configuration)
         token = await lightcast_auth.get_access_token()
-        
+
         return {
             "status": "healthy",
             "authentication": "configured" if token else "failed",

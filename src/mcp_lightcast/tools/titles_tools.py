@@ -1,6 +1,7 @@
 """MCP tools for Lightcast Titles API."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from fastmcp import FastMCP
 
 from ..apis.titles import TitlesAPIClient
@@ -8,13 +9,13 @@ from ..apis.titles import TitlesAPIClient
 
 def register_titles_tools(mcp: FastMCP):
     """Register all titles-related MCP tools."""
-    
+
     @mcp.tool
     async def search_job_titles(
         query: str,
         limit: int = 10,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search for job titles in the Lightcast database.
         
@@ -36,12 +37,12 @@ def register_titles_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_job_title_details(
         title_id: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed information about a specific job title.
         
@@ -61,12 +62,12 @@ def register_titles_tools(mcp: FastMCP):
                 "parent": result.parent,
                 "children": result.children
             }
-    
+
     @mcp.tool
     async def normalize_job_title(
         raw_title: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Normalize a raw job title string to the best matching Lightcast title.
         
@@ -88,12 +89,12 @@ def register_titles_tools(mcp: FastMCP):
                 },
                 "original_title": raw_title
             }
-    
+
     @mcp.tool
     async def get_title_hierarchy(
         title_id: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get the hierarchical structure for a job title.
         
@@ -106,11 +107,11 @@ def register_titles_tools(mcp: FastMCP):
         """
         async with TitlesAPIClient() as client:
             return await client.get_title_hierarchy(title_id, version)
-    
+
     @mcp.tool
     async def get_titles_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get metadata about the Lightcast titles taxonomy.
         
@@ -122,11 +123,11 @@ def register_titles_tools(mcp: FastMCP):
         """
         async with TitlesAPIClient() as client:
             return await client.get_titles_metadata(version)
-    
+
     @mcp.tool
     async def get_titles_version_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get comprehensive metadata about a specific titles API version.
         
@@ -144,9 +145,9 @@ def register_titles_tools(mcp: FastMCP):
                 "removed_title_count": result.removedTitleCount,
                 "fields": result.fields
             }
-    
+
     @mcp.tool
-    async def get_titles_general_metadata() -> Dict[str, Any]:
+    async def get_titles_general_metadata() -> dict[str, Any]:
         """
         Get general metadata about the titles taxonomy.
         
@@ -159,12 +160,12 @@ def register_titles_tools(mcp: FastMCP):
                 "latest_version": result.latestVersion,
                 "attribution": result.attribution
             }
-    
+
     @mcp.tool
     async def bulk_retrieve_titles(
-        title_ids: List[str],
+        title_ids: list[str],
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve multiple titles by their IDs in a single efficient request.
         

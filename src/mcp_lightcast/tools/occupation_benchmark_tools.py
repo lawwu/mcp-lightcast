@@ -1,6 +1,7 @@
 """MCP tools for Lightcast Occupation Benchmark API."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from fastmcp import FastMCP
 
 from ..apis.occupation_benchmark import OccupationBenchmarkAPIClient
@@ -8,15 +9,15 @@ from ..apis.occupation_benchmark import OccupationBenchmarkAPIClient
 
 def register_occupation_benchmark_tools(mcp: FastMCP):
     """Register all occupation benchmark-related MCP tools."""
-    
+
     @mcp.tool
     async def get_occupation_benchmark(
         occupation_id: str,
-        metrics: Optional[List[str]] = None,
-        region: Optional[str] = None,
-        time_period: Optional[str] = None,
+        metrics: list[str] | None = None,
+        region: str | None = None,
+        time_period: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get comprehensive benchmark data for an occupation.
         
@@ -47,14 +48,14 @@ def register_occupation_benchmark_tools(mcp: FastMCP):
                 ],
                 "benchmark_date": result.benchmark_date
             }
-    
+
     @mcp.tool
     async def get_salary_benchmarks(
-        occupation_ids: List[str],
-        region: Optional[str] = None,
-        experience_level: Optional[str] = None,
+        occupation_ids: list[str],
+        region: str | None = None,
+        experience_level: str | None = None,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get salary benchmark data for multiple occupations.
         
@@ -82,16 +83,16 @@ def register_occupation_benchmark_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_skill_demand_benchmarks(
-        skill_ids: Optional[List[str]] = None,
-        occupation_filter: Optional[List[str]] = None,
-        region: Optional[str] = None,
-        time_period: Optional[str] = None,
+        skill_ids: list[str] | None = None,
+        occupation_filter: list[str] | None = None,
+        region: str | None = None,
+        time_period: str | None = None,
         limit: int = 100,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get skill demand benchmark data.
         
@@ -119,14 +120,14 @@ def register_occupation_benchmark_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def compare_occupations_benchmark(
-        occupation_ids: List[str],
-        metrics: List[str],
-        region: Optional[str] = None,
+        occupation_ids: list[str],
+        metrics: list[str],
+        region: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Compare benchmark metrics across multiple occupations.
         
@@ -141,14 +142,14 @@ def register_occupation_benchmark_tools(mcp: FastMCP):
         """
         async with OccupationBenchmarkAPIClient() as client:
             return await client.compare_occupations_benchmark(occupation_ids, metrics, region, version)
-    
+
     @mcp.tool
     async def get_regional_benchmarks(
         metric_type: str,
-        regions: Optional[List[str]] = None,
-        occupation_filter: Optional[List[str]] = None,
+        regions: list[str] | None = None,
+        occupation_filter: list[str] | None = None,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get regional benchmark data for specific metrics.
         
@@ -180,14 +181,14 @@ def register_occupation_benchmark_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_employment_trends(
         occupation_id: str,
-        years: Optional[List[int]] = None,
-        region: Optional[str] = None,
+        years: list[int] | None = None,
+        region: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get employment trend data for an occupation.
         
@@ -202,14 +203,14 @@ def register_occupation_benchmark_tools(mcp: FastMCP):
         """
         async with OccupationBenchmarkAPIClient() as client:
             return await client.get_employment_trends(occupation_id, years, region, version)
-    
+
     @mcp.tool
     async def get_industry_benchmarks(
-        industry_ids: List[str],
-        metrics: List[str],
-        region: Optional[str] = None,
+        industry_ids: list[str],
+        metrics: list[str],
+        region: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get benchmark data by industry.
         
@@ -224,11 +225,11 @@ def register_occupation_benchmark_tools(mcp: FastMCP):
         """
         async with OccupationBenchmarkAPIClient() as client:
             return await client.get_industry_benchmarks(industry_ids, metrics, region, version)
-    
+
     @mcp.tool
     async def get_benchmark_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get Occupation Benchmark API metadata and version information.
         

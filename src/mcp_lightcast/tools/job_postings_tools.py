@@ -1,7 +1,7 @@
 """MCP tools for Lightcast Job Postings API."""
 
-from typing import List, Dict, Any, Optional, Union
-from datetime import date
+from typing import Any
+
 from fastmcp import FastMCP
 
 from ..apis.job_postings import JobPostingsAPIClient
@@ -9,23 +9,23 @@ from ..apis.job_postings import JobPostingsAPIClient
 
 def register_job_postings_tools(mcp: FastMCP):
     """Register all job postings-related MCP tools."""
-    
+
     @mcp.tool
     async def search_job_postings(
-        query: Optional[str] = None,
-        occupation_ids: Optional[List[str]] = None,
-        skill_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        company: Optional[str] = None,
-        date_from: Optional[str] = None,
-        date_to: Optional[str] = None,
-        salary_min: Optional[float] = None,
-        salary_max: Optional[float] = None,
-        employment_type: Optional[str] = None,
+        query: str | None = None,
+        occupation_ids: list[str] | None = None,
+        skill_ids: list[str] | None = None,
+        location: str | None = None,
+        company: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        salary_min: float | None = None,
+        salary_max: float | None = None,
+        employment_type: str | None = None,
         limit: int = 100,
         offset: int = 0,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search job postings with various filters.
         
@@ -53,14 +53,14 @@ def register_job_postings_tools(mcp: FastMCP):
                 date_from, date_to, salary_min, salary_max, employment_type,
                 limit, offset, version
             )
-    
+
     @mcp.tool
     async def get_job_posting_details(
         posting_id: str,
         include_skills: bool = True,
         include_company_info: bool = True,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed information for a specific job posting.
         
@@ -90,16 +90,16 @@ def register_job_postings_tools(mcp: FastMCP):
                 "skills": result.skills,
                 "industries": result.industries
             }
-    
+
     @mcp.tool
     async def get_posting_statistics(
-        occupation_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        industry_ids: Optional[List[str]] = None,
-        date_from: Optional[str] = None,
-        date_to: Optional[str] = None,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        industry_ids: list[str] | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get job posting statistics for specified filters.
         
@@ -124,16 +124,16 @@ def register_job_postings_tools(mcp: FastMCP):
                 "top_locations": result.top_locations,
                 "top_companies": result.top_companies
             }
-    
+
     @mcp.tool
     async def analyze_skill_demand(
-        occupation_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        time_period: Optional[str] = None,
-        skill_type: Optional[str] = None,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        time_period: str | None = None,
+        skill_type: str | None = None,
         limit: int = 50,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Analyze skill demand from job postings.
         
@@ -161,16 +161,16 @@ def register_job_postings_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_salary_insights(
-        occupation_ids: Optional[List[str]] = None,
-        skill_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        experience_level: Optional[str] = None,
-        time_period: Optional[str] = None,
+        occupation_ids: list[str] | None = None,
+        skill_ids: list[str] | None = None,
+        location: str | None = None,
+        experience_level: str | None = None,
+        time_period: str | None = None,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get salary insights from job postings.
         
@@ -201,15 +201,15 @@ def register_job_postings_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def analyze_market_trends(
-        occupation_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        industry_ids: Optional[List[str]] = None,
-        time_periods: Optional[List[str]] = None,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        industry_ids: list[str] | None = None,
+        time_periods: list[str] | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Analyze job market trends from posting data.
         
@@ -253,15 +253,15 @@ def register_job_postings_tools(mcp: FastMCP):
                 ],
                 "regional_insights": result.regional_insights
             }
-    
+
     @mcp.tool
     async def get_company_insights(
         company_name: str,
         include_postings: bool = False,
         include_skills: bool = True,
-        time_period: Optional[str] = None,
+        time_period: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get insights about a specific company's job postings.
         
@@ -277,14 +277,14 @@ def register_job_postings_tools(mcp: FastMCP):
         """
         async with JobPostingsAPIClient() as client:
             return await client.get_company_insights(company_name, include_postings, include_skills, time_period, version)
-    
+
     @mcp.tool
     async def extract_skills_from_posting(
         job_description: str,
         confidence_threshold: float = 0.7,
         include_soft_skills: bool = True,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Extract skills from a job posting description.
         
@@ -299,11 +299,11 @@ def register_job_postings_tools(mcp: FastMCP):
         """
         async with JobPostingsAPIClient() as client:
             return await client.extract_skills_from_posting(job_description, confidence_threshold, include_soft_skills, version)
-    
+
     @mcp.tool
     async def get_postings_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get Job Postings API metadata and version information.
         

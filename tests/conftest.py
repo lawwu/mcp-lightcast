@@ -1,16 +1,17 @@
 """Pytest configuration and fixtures for MCP Lightcast tests."""
 
-import pytest
 import asyncio
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
-from typing import Dict, Any
-import httpx
 
-from src.mcp_lightcast.auth.oauth import LightcastAuth
-from src.mcp_lightcast.apis.titles import TitlesAPIClient
-from src.mcp_lightcast.apis.skills import SkillsAPIClient
+import httpx
+import pytest
+
 from src.mcp_lightcast.apis.classification import ClassificationAPIClient
 from src.mcp_lightcast.apis.similarity import SimilarityAPIClient
+from src.mcp_lightcast.apis.skills import SkillsAPIClient
+from src.mcp_lightcast.apis.titles import TitlesAPIClient
+from src.mcp_lightcast.auth.oauth import LightcastAuth
 
 
 @pytest.fixture(scope="session")
@@ -51,7 +52,7 @@ def sample_title_search_response():
                 "type": "Tech"
             },
             {
-                "id": "2", 
+                "id": "2",
                 "name": "Senior Software Engineer",
                 "type": "Tech"
             }
@@ -87,7 +88,7 @@ def sample_skill_search_response():
             {
                 "id": "KS1200770D9CT9WGXMPS",
                 "name": "JavaScript",
-                "type": "Hard Skill", 
+                "type": "Hard Skill",
                 "category": "Information Technology",
                 "subcategory": "Programming Languages"
             }
@@ -125,7 +126,7 @@ def sample_occupation_skills_response():
                     "importance": 0.85
                 },
                 {
-                    "id": "KS1200770D9CT9WGXMPS", 
+                    "id": "KS1200770D9CT9WGXMPS",
                     "name": "JavaScript",
                     "type": "Hard Skill",
                     "importance": 0.78
@@ -175,7 +176,7 @@ def mock_similarity_client(mock_httpx_client, mock_auth):
 @pytest.fixture
 def mock_successful_response():
     """Create a mock successful HTTP response."""
-    def _create_response(json_data: Dict[str, Any], status_code: int = 200):
+    def _create_response(json_data: dict[str, Any], status_code: int = 200):
         response = MagicMock()
         response.status_code = status_code
         response.json.return_value = json_data
@@ -195,11 +196,11 @@ def mock_error_response():
         response.json.return_value = {"error": error_message}
         response.headers = {"content-type": "application/json"}
         response.text = error_message
-        
+
         def raise_for_status():
             from httpx import HTTPStatusError
             raise HTTPStatusError(error_message, request=MagicMock(), response=response)
-        
+
         response.raise_for_status.side_effect = raise_for_status
         return response
     return _create_error_response

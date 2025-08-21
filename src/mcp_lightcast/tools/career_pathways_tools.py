@@ -1,6 +1,7 @@
 """MCP tools for Lightcast Career Pathways API."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from fastmcp import FastMCP
 
 from ..apis.career_pathways import CareerPathwaysAPIClient
@@ -8,16 +9,16 @@ from ..apis.career_pathways import CareerPathwaysAPIClient
 
 def register_career_pathways_tools(mcp: FastMCP):
     """Register all career pathways-related MCP tools."""
-    
+
     @mcp.tool
     async def analyze_career_pathway(
         from_occupation_id: str,
         to_occupation_id: str,
         max_steps: int = 3,
         include_skill_analysis: bool = True,
-        region: Optional[str] = None,
+        region: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Analyze career pathway between two occupations.
         
@@ -82,16 +83,16 @@ def register_career_pathways_tools(mcp: FastMCP):
                 ],
                 "recommended_training": result.recommended_training
             }
-    
+
     @mcp.tool
     async def discover_career_pathways(
         occupation_id: str,
         pathway_type: str = "advancement",
-        career_level: Optional[str] = None,
-        industry_filter: Optional[List[str]] = None,
+        career_level: str | None = None,
+        industry_filter: list[str] | None = None,
         limit: int = 20,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Discover potential career pathways from a given occupation.
         
@@ -137,14 +138,14 @@ def register_career_pathways_tools(mcp: FastMCP):
                 }
                 for pathway in results
             ]
-    
+
     @mcp.tool
     async def get_skill_transition_map(
         from_occupation_id: str,
         to_occupation_id: str,
-        skill_level: Optional[str] = None,
+        skill_level: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed skill transition mapping between occupations.
         
@@ -159,16 +160,16 @@ def register_career_pathways_tools(mcp: FastMCP):
         """
         async with CareerPathwaysAPIClient() as client:
             return await client.get_skill_transition_map(from_occupation_id, to_occupation_id, skill_level, version)
-    
+
     @mcp.tool
     async def analyze_industry_transitions(
-        from_industry_ids: Optional[List[str]] = None,
-        to_industry_ids: Optional[List[str]] = None,
-        time_period: Optional[str] = None,
-        region: Optional[str] = None,
+        from_industry_ids: list[str] | None = None,
+        to_industry_ids: list[str] | None = None,
+        time_period: str | None = None,
+        region: str | None = None,
         limit: int = 50,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Analyze career transitions between industries.
         
@@ -197,16 +198,16 @@ def register_career_pathways_tools(mcp: FastMCP):
                 }
                 for transition in results
             ]
-    
+
     @mcp.tool
     async def get_pathway_recommendations(
         current_occupation_id: str,
-        career_goals: List[str],
-        skills_inventory: Optional[List[str]] = None,
-        time_horizon: Optional[int] = None,
-        region: Optional[str] = None,
+        career_goals: list[str],
+        skills_inventory: list[str] | None = None,
+        time_horizon: int | None = None,
+        region: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get personalized career pathway recommendations.
         
@@ -223,13 +224,13 @@ def register_career_pathways_tools(mcp: FastMCP):
         """
         async with CareerPathwaysAPIClient() as client:
             return await client.get_pathway_recommendations(current_occupation_id, career_goals, skills_inventory, time_horizon, region, version)
-    
+
     @mcp.tool
     async def validate_pathway_feasibility(
-        pathway_steps: List[str],
-        constraints: Optional[Dict[str, Any]] = None,
+        pathway_steps: list[str],
+        constraints: dict[str, Any] | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate the feasibility of a custom career pathway.
         
@@ -243,15 +244,15 @@ def register_career_pathways_tools(mcp: FastMCP):
         """
         async with CareerPathwaysAPIClient() as client:
             return await client.validate_pathway_feasibility(pathway_steps, constraints, version)
-    
+
     @mcp.tool
     async def get_trending_pathways(
-        industry_id: Optional[str] = None,
-        region: Optional[str] = None,
-        time_period: Optional[str] = None,
+        industry_id: str | None = None,
+        region: str | None = None,
+        time_period: str | None = None,
         limit: int = 20,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get trending career pathways based on recent data.
         
@@ -267,11 +268,11 @@ def register_career_pathways_tools(mcp: FastMCP):
         """
         async with CareerPathwaysAPIClient() as client:
             return await client.get_trending_pathways(industry_id, region, time_period, limit, version)
-    
+
     @mcp.tool
     async def get_pathways_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get Career Pathways API metadata and version information.
         

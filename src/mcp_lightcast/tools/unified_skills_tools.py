@@ -1,21 +1,19 @@
 """MCP tools for unified title normalization and skills extraction."""
 
 import logging
-from typing import List, Optional
 
 from .unified_skills import normalize_title_and_get_skills
-
 
 logger = logging.getLogger(__name__)
 
 
 def register_unified_skills_tools(mcp):
     """Register unified skills extraction tools with the MCP server."""
-    
+
     @mcp.tool()
     async def normalize_title_and_extract_skills(
         title: str,
-        sources: Optional[List[str]] = None,
+        sources: list[str] | None = None,
         n_skills: int = 25,
         mapping_name: str = "titles_v5.24.0_lot_v6.20.0"
     ) -> dict:
@@ -66,10 +64,10 @@ def register_unified_skills_tools(mcp):
         """
         if sources is None:
             sources = ["all"]
-            
+
         logger.info(f"Normalizing title and extracting skills for: {title}")
         logger.info(f"Using sources: {sources}, max skills: {n_skills}")
-        
+
         try:
             result = await normalize_title_and_get_skills(
                 title=title,
@@ -77,32 +75,32 @@ def register_unified_skills_tools(mcp):
                 n_skills=n_skills,
                 mapping_name=mapping_name
             )
-            
+
             logger.info(f"Successfully processed title: {title}")
             logger.info(f"Found {len(result['unified_skills'])} unified skills")
-            
+
             return result
-            
+
         except Exception as e:
             error_msg = f"Failed to process title '{title}': {str(e)}"
             logger.error(error_msg)
             return {
                 "title": title,
                 "normalized_title": None,
-                "title_id": None, 
+                "title_id": None,
                 "lotspecocc_id": None,
                 "skills_by_source": {},
                 "unified_skills": [],
                 "errors": [error_msg],
                 "metadata": {}
             }
-    
+
     @mcp.tool()
     async def bulk_normalize_titles_and_extract_skills(
-        titles: List[str],
-        sources: Optional[List[str]] = None,
+        titles: list[str],
+        sources: list[str] | None = None,
         n_skills: int = 15
-    ) -> List[dict]:
+    ) -> list[dict]:
         """
         Normalize multiple job titles and extract skills in bulk.
         
@@ -132,9 +130,9 @@ def register_unified_skills_tools(mcp):
         """
         if sources is None:
             sources = ["all"]
-            
+
         logger.info(f"Processing {len(titles)} titles in bulk")
-        
+
         results = []
         for title in titles:
             try:
@@ -145,7 +143,7 @@ def register_unified_skills_tools(mcp):
                 )
                 results.append(result)
                 logger.info(f"Processed title: {title} -> {len(result['unified_skills'])} skills")
-                
+
             except Exception as e:
                 error_msg = f"Failed to process title '{title}': {str(e)}"
                 logger.error(error_msg)
@@ -153,21 +151,21 @@ def register_unified_skills_tools(mcp):
                     "title": title,
                     "normalized_title": None,
                     "title_id": None,
-                    "lotspecocc_id": None, 
+                    "lotspecocc_id": None,
                     "skills_by_source": {},
                     "unified_skills": [],
                     "errors": [error_msg],
                     "metadata": {}
                 })
-        
+
         logger.info(f"Completed bulk processing of {len(titles)} titles")
         return results
-    
+
     @mcp.tool()
     async def compare_title_skills(
         title1: str,
         title2: str,
-        sources: Optional[List[str]] = None,
+        sources: list[str] | None = None,
         n_skills: int = 20
     ) -> dict:
         """
@@ -203,9 +201,9 @@ def register_unified_skills_tools(mcp):
         """
         if sources is None:
             sources = ["classification"]  # Use classification for faster comparison
-            
+
         logger.info(f"Comparing skills between '{title1}' and '{title2}'")
-        
+
         try:
             # Get skills for both titles
             result1 = await normalize_title_and_get_skills(
@@ -213,29 +211,29 @@ def register_unified_skills_tools(mcp):
                 sources=sources,
                 n_skills=n_skills
             )
-            
+
             result2 = await normalize_title_and_get_skills(
                 title=title2,
                 sources=sources,
                 n_skills=n_skills
             )
-            
+
             # Extract skills lists
             skills1 = set(result1["unified_skills"])
             skills2 = set(result2["unified_skills"])
-            
+
             # Calculate overlaps
             shared_skills = list(skills1.intersection(skills2))
             unique_to_title1 = list(skills1 - skills2)
             unique_to_title2 = list(skills2 - skills1)
-            
+
             # Calculate Jaccard similarity
             union_size = len(skills1.union(skills2))
             similarity_score = len(shared_skills) / union_size if union_size > 0 else 0.0
-            
+
             logger.info(f"Comparison complete: {len(shared_skills)} shared skills, "
                        f"similarity: {similarity_score:.3f}")
-            
+
             return {
                 "title1_result": result1,
                 "title2_result": result2,
@@ -250,7 +248,7 @@ def register_unified_skills_tools(mcp):
                     "jaccard_similarity": similarity_score
                 }
             }
-            
+
         except Exception as e:
             error_msg = f"Failed to compare titles '{title1}' and '{title2}': {str(e)}"
             logger.error(error_msg)

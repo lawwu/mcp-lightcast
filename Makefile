@@ -41,8 +41,40 @@ test-verbose: ## Run tests with verbose output
 test-coverage: ## Run tests with coverage report
 	uv run pytest --cov=src --cov-report=html --cov-report=term
 
-test-basic: ## Run basic functionality test
-	uv run python test_basic_functionality.py
+test-apis-manual: ## Run comprehensive manual API tests (requires valid credentials)
+	@if [ -f .env ]; then echo "📄 Loading environment from .env file..."; fi
+	uv run --env-file .env python tests/manual_api_integration.py
+
+test-apis-verbose: ## Run manual API tests with detailed output
+	@if [ -f .env ]; then echo "📄 Loading environment from .env file..."; fi
+	PYTHONPATH=. uv run --env-file .env python -v tests/manual_api_integration.py
+
+test-env-check: ## Check if API credentials are configured
+	@echo "🔑 Checking API credentials..."
+	@if [ -f .env ]; then \
+		echo "📄 .env file found - loading variables..."; \
+		set -a && source .env && set +a; \
+	else \
+		echo "⚠️  .env file not found - checking environment variables..."; \
+	fi
+	@if [ -f .env ]; then set -a && source .env && set +a; fi; \
+	if [ -z "$$LIGHTCAST_CLIENT_ID" ]; then \
+		echo "❌ LIGHTCAST_CLIENT_ID not configured"; \
+	else \
+		echo "✅ LIGHTCAST_CLIENT_ID: $${LIGHTCAST_CLIENT_ID:0:10}..."; \
+	fi
+	@if [ -f .env ]; then set -a && source .env && set +a; fi; \
+	if [ -z "$$LIGHTCAST_CLIENT_SECRET" ]; then \
+		echo "❌ LIGHTCAST_CLIENT_SECRET not configured"; \
+	else \
+		echo "✅ LIGHTCAST_CLIENT_SECRET: [configured]"; \
+	fi
+	@if [ ! -f .env ] && [ -z "$$LIGHTCAST_CLIENT_ID" ]; then \
+		echo ""; \
+		echo "💡 To configure credentials, either:"; \
+		echo "   1. Create .env file: cp .env.example .env"; \
+		echo "   2. Set environment variables directly"; \
+	fi
 
 # Code Quality
 lint: ## Run linting with ruff
@@ -155,6 +187,9 @@ claude-config: ## Show Claude Desktop configuration
 
 # All-in-one commands
 check: lint type-check test ## Run all checks (lint, type-check, test)
+
+check-apis: ## Run all checks plus manual API tests
+	make check && make test-apis-manual
 
 ci: clean install-dev check ## Run CI pipeline locally
 
