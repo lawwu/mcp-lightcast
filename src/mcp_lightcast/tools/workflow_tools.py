@@ -1,6 +1,7 @@
 """MCP tools for combined Lightcast API workflows."""
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from fastmcp import FastMCP
 
 from .normalize_title_get_skills import TitleNormalizationWorkflow
@@ -8,16 +9,16 @@ from .normalize_title_get_skills import TitleNormalizationWorkflow
 
 def register_workflow_tools(mcp: FastMCP):
     """Register workflow-related MCP tools."""
-    
+
     @mcp.tool
     async def normalize_title_and_get_skills(
         raw_title: str,
         max_occupations: int = 5,
         max_skills_per_occupation: int = 20,
-        skill_type: Optional[str] = None,
+        skill_type: str | None = None,
         confidence_threshold: float = 0.5,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Complete workflow: normalize a job title and get associated skills.
         
@@ -46,7 +47,7 @@ def register_workflow_tools(mcp: FastMCP):
                 confidence_threshold=confidence_threshold,
                 version=version
             )
-            
+
             return {
                 "raw_title": result.raw_title,
                 "normalized_title": result.normalized_title,
@@ -54,13 +55,13 @@ def register_workflow_tools(mcp: FastMCP):
                 "skills": result.skills,
                 "metadata": result.workflow_metadata
             }
-    
+
     @mcp.tool
     async def get_title_skills_simple(
         raw_title: str,
         limit: int = 50,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Simplified workflow to get skills for a job title.
         
@@ -80,7 +81,7 @@ def register_workflow_tools(mcp: FastMCP):
                 limit=limit,
                 version=version
             )
-    
+
     @mcp.tool
     async def analyze_job_posting_skills(
         job_title: str,
@@ -88,7 +89,7 @@ def register_workflow_tools(mcp: FastMCP):
         extract_from_description: bool = True,
         merge_results: bool = True,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Analyze a job posting to identify relevant skills from both title and description.
         
@@ -103,7 +104,7 @@ def register_workflow_tools(mcp: FastMCP):
             Combined analysis of skills from title normalization and description extraction
         """
         from src.mcp_lightcast.apis.skills import SkillsAPIClient
-        
+
         results = {
             "job_title": job_title,
             "job_description_length": len(job_description),
@@ -112,7 +113,7 @@ def register_workflow_tools(mcp: FastMCP):
             "merged_skills": [],
             "analysis_metadata": {}
         }
-        
+
         # Get skills from title normalization workflow
         async with TitleNormalizationWorkflow() as workflow:
             title_result = await workflow.get_title_skills_simple(
@@ -120,11 +121,11 @@ def register_workflow_tools(mcp: FastMCP):
                 limit=30,
                 version=version
             )
-            
+
             results["title_based_skills"] = title_result["skills"]
             results["normalized_title"] = title_result["normalized_title"]
             results["title_confidence"] = title_result["confidence"]
-        
+
         # Extract skills from job description if provided
         if job_description and extract_from_description:
             async with SkillsAPIClient() as skills_client:
@@ -134,11 +135,11 @@ def register_workflow_tools(mcp: FastMCP):
                     version=version
                 )
                 results["description_extracted_skills"] = extracted
-        
+
         # Merge results if requested
         if merge_results:
             all_skills = {}
-            
+
             # Add title-based skills
             for skill in results["title_based_skills"]:
                 skill_name = skill.get("name", "")
@@ -147,7 +148,7 @@ def register_workflow_tools(mcp: FastMCP):
                         **skill,
                         "sources": ["title_normalization"]
                     }
-            
+
             # Add description-extracted skills
             for skill in results["description_extracted_skills"]:
                 skill_name = skill.get("name", skill.get("skill_name", ""))
@@ -163,16 +164,16 @@ def register_workflow_tools(mcp: FastMCP):
                             **skill,
                             "sources": ["description_extraction"]
                         }
-            
+
             results["merged_skills"] = list(all_skills.values())
             results["analysis_metadata"] = {
                 "title_skills_count": len(results["title_based_skills"]),
                 "description_skills_count": len(results["description_extracted_skills"]),
                 "merged_skills_count": len(results["merged_skills"]),
                 "unique_skills_from_both_sources": len([
-                    s for s in results["merged_skills"] 
+                    s for s in results["merged_skills"]
                     if len(s.get("sources", [])) > 1
                 ])
             }
-        
+
         return results

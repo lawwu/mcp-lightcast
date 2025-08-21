@@ -1,6 +1,7 @@
 """MCP tools for Lightcast Skills API."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from fastmcp import FastMCP
 
 from ..apis.skills import SkillsAPIClient
@@ -8,16 +9,16 @@ from ..apis.skills import SkillsAPIClient
 
 def register_skills_tools(mcp: FastMCP):
     """Register all skills-related MCP tools."""
-    
+
     @mcp.tool
     async def search_skills(
         query: str,
         limit: int = 10,
-        skill_type: Optional[str] = None,
-        category: Optional[str] = None,
-        subcategory: Optional[str] = None,
+        skill_type: str | None = None,
+        category: str | None = None,
+        subcategory: str | None = None,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search for skills in the Lightcast skills database.
         
@@ -47,12 +48,12 @@ def register_skills_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_skill_details(
         skill_id: str,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get detailed information about a specific skill.
         
@@ -75,12 +76,12 @@ def register_skills_tools(mcp: FastMCP):
                 "tags": result.tags,
                 "info_url": result.infoUrl
             }
-    
+
     @mcp.tool
     async def get_multiple_skills(
-        skill_ids: List[str],
+        skill_ids: list[str],
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get detailed information about multiple skills at once.
         
@@ -107,13 +108,13 @@ def register_skills_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def get_related_skills(
         skill_id: str,
         limit: int = 10,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get skills related to a specific skill.
         
@@ -138,29 +139,29 @@ def register_skills_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
-    async def get_skill_categories(
+    async def get_skill_types(
         version: str = "latest"
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
-        Get all available skill categories and subcategories.
+        Get all available skill types.
         
         Args:
             version: API version to use (default: "latest", can specify previous versions like "9.33", "9.32", etc.)
             
         Returns:
-            List of skill categories and their subcategories
+            List of skill types with descriptions
         """
         async with SkillsAPIClient() as client:
-            return await client.get_skill_categories(version)
-    
+            return await client.get_skill_types(version)
+
     @mcp.tool
     async def extract_skills_from_text(
         text: str,
         confidence_threshold: float = 0.5,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Extract skills mentioned in a text description.
         
@@ -174,11 +175,11 @@ def register_skills_tools(mcp: FastMCP):
         """
         async with SkillsAPIClient() as client:
             return await client.extract_skills_from_text(text, confidence_threshold, version)
-    
+
     @mcp.tool
     async def get_skills_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get metadata about the Lightcast skills taxonomy.
         
@@ -190,11 +191,11 @@ def register_skills_tools(mcp: FastMCP):
         """
         async with SkillsAPIClient() as client:
             return await client.get_skills_metadata(version)
-    
+
     @mcp.tool
     async def get_skills_version_metadata(
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get comprehensive metadata about a specific skills API version.
         
@@ -214,12 +215,12 @@ def register_skills_tools(mcp: FastMCP):
                 "language_support": result.languageSupport,
                 "skill_types": [{"id": t.id, "name": t.name} for t in result.types]
             }
-    
+
     @mcp.tool
     async def bulk_retrieve_skills(
-        skill_ids: List[str],
+        skill_ids: list[str],
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve multiple skills by their IDs in a single efficient request.
         
@@ -246,12 +247,12 @@ def register_skills_tools(mcp: FastMCP):
                 }
                 for result in results
             ]
-    
+
     @mcp.tool
     async def extract_skills_simple(
         text: str,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Extract skills from text using default confidence threshold (simplified version).
         

@@ -4,16 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-lightcast"
-version = "0.1.0"
+version = "0.2.0"
 # dynamic = ["version"]  # Disabled in favor of static version
 description = "MCP server for Lightcast API integration using FastMCP"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "MCP Lightcast Team", email = "contact@mcp-lightcast.dev"}
+    {name = "Lawrence Wu"}
 ]
 maintainers = [
-    {name = "MCP Lightcast Team", email = "contact@mcp-lightcast.dev"}
+    {name = "Lawrence Wu"}
 ]
 keywords = ["mcp", "lightcast", "skills", "job-titles", "api", "fastmcp"]
 classifiers = [
