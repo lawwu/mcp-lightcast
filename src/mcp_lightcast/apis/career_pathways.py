@@ -64,6 +64,79 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
     def __init__(self):
         super().__init__(api_name="career_pathways")
     
+    # Working endpoints discovered from testing
+    async def get_api_metadata(self) -> Dict[str, Any]:
+        """
+        Get comprehensive API metadata including model versions and supported taxonomies.
+        
+        Returns:
+            API metadata with dimensions, transition categories, regions, and versions
+        """
+        response = await self.get("meta")
+        return response.get("data", {})
+    
+    async def get_api_status(self) -> Dict[str, Any]:
+        """
+        Get API health status.
+        
+        Returns:
+            API health status information
+        """
+        response = await self.get("status")
+        return response.get("data", {})
+    
+    async def get_api_documentation(self) -> str:
+        """
+        Get API documentation.
+        
+        Returns:
+            API documentation content
+        """
+        response = await self.get("docs")
+        return response if isinstance(response, str) else str(response)
+    
+    async def get_available_dimensions(self) -> List[str]:
+        """
+        Get list of available dimensions (taxonomies).
+        
+        Returns:
+            List of available dimension names (soc, onet, lotocc, lotspecocc)
+        """
+        response = await self.get("dimensions")
+        return response.get("data", [])
+    
+    async def get_dimension_info(
+        self,
+        dimension: str
+    ) -> Dict[str, Any]:
+        """
+        Get information about a specific dimension (taxonomy).
+        
+        Args:
+            dimension: Dimension ID (soc, onet, lotocc, lotspecocc)
+            
+        Returns:
+            Dimension information including title, description, and taxonomy versions
+        """
+        response = await self.get(f"dimensions/{dimension}")
+        return response.get("data", {})
+    
+    async def get_soc_dimension(self) -> Dict[str, Any]:
+        """Get SOC (Standard Occupation Classification) dimension information."""
+        return await self.get_dimension_info("soc")
+    
+    async def get_onet_dimension(self) -> Dict[str, Any]:
+        """Get O*NET dimension information."""
+        return await self.get_dimension_info("onet")
+    
+    async def get_lotocc_dimension(self) -> Dict[str, Any]:
+        """Get LOT Occupation dimension information."""
+        return await self.get_dimension_info("lotocc")
+    
+    async def get_lotspecocc_dimension(self) -> Dict[str, Any]:
+        """Get LOT Specialized Occupation dimension information."""
+        return await self.get_dimension_info("lotspecocc")
+    
     async def analyze_career_pathway(
         self,
         from_occupation_id: str,

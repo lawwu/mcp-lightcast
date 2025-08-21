@@ -62,8 +62,23 @@ class BaseLightcastClient(ABC):
         "job_postings": "postings:us"
     }
     
+    # Correct base URLs for different APIs based on reference implementation
+    API_BASE_URLS = {
+        "skills": "https://emsiservices.com/skills",
+        "titles": "https://emsiservices.com/titles",
+        "classification": "https://classification.emsicloud.com",
+        "similarity": "https://emsiservices.com/similarity", 
+        "occupation_benchmark": "https://emsiservices.com/occupation-benchmark",
+        "career_pathways": "https://emsiservices.com/career-pathways",
+        "job_postings": "https://emsiservices.com/jpa"
+    }
+    
     def __init__(self, api_name: Optional[str] = None):
-        self.base_url = lightcast_config.base_url
+        # Use API-specific base URL if available, otherwise fall back to default
+        if api_name and api_name in self.API_BASE_URLS:
+            self.base_url = self.API_BASE_URLS[api_name]
+        else:
+            self.base_url = lightcast_config.base_url
         self.api_name = api_name
         
         # Override OAuth scope if API name is provided and requires premium scope

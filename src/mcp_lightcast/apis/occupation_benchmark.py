@@ -59,6 +59,59 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
     def __init__(self):
         super().__init__(api_name="occupation_benchmark")
     
+    # Working endpoints discovered from testing
+    async def get_dimension_info(
+        self,
+        dimension: str
+    ) -> Dict[str, Any]:
+        """
+        Get information about a specific dimension (taxonomy).
+        
+        Args:
+            dimension: Dimension ID (lotocc, soc, onet, lotspecocc)
+            
+        Returns:
+            Dimension information including title, description, and taxonomy versions
+        """
+        response = await self.get(f"dimensions/{dimension}")
+        return response.get("data", {})
+    
+    async def get_lotocc_dimension(self) -> Dict[str, Any]:
+        """Get LOT Occupation dimension information."""
+        return await self.get_dimension_info("lotocc")
+    
+    async def get_soc_dimension(self) -> Dict[str, Any]:
+        """Get SOC (Standard Occupation Classification) dimension information."""
+        return await self.get_dimension_info("soc")
+    
+    async def get_onet_dimension(self) -> Dict[str, Any]:
+        """Get O*NET dimension information."""
+        return await self.get_dimension_info("onet")
+    
+    async def get_lotspecocc_dimension(self) -> Dict[str, Any]:
+        """Get LOT Specialized Occupation dimension information."""
+        return await self.get_dimension_info("lotspecocc")
+    
+    async def get_api_metadata(self) -> Dict[str, Any]:
+        """
+        Get comprehensive API metadata including available datasets and dimensions.
+        
+        Returns:
+            API metadata with datasets, dimensions, regions, and taxonomy versions
+        """
+        response = await self.get("meta")
+        return response.get("data", {})
+    
+    async def get_api_status(self) -> Dict[str, Any]:
+        """
+        Get API health status.
+        
+        Returns:
+            API health status information
+        """
+        response = await self.get("status")
+        return response.get("data", {})
+    
     async def get_occupation_benchmark(
         self,
         occupation_id: str,
