@@ -506,57 +506,20 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         version: str = "latest"
     ) -> dict[str, Any]:
         """
-        Alias for analyze_career_pathway that returns raw data.
+        Get pathway analysis between two occupations (simplified endpoint).
         """
-        result = await self.analyze_career_pathway(
-            from_occupation_id=from_occupation_id,
-            to_occupation_id=to_occupation_id,
-            max_steps=max_steps,
-            include_skill_analysis=include_skill_analysis,
-            region=region,
+        params = {
+            "from_occupation": from_occupation_id,
+            "to_occupation": to_occupation_id,
+            "max_steps": max_steps,
+            "include_skills": include_skill_analysis
+        }
+        if region:
+            params["region"] = region
+
+        response = await self.get(
+            f"versions/{version}/analyze",
+            params=params,
             version=version
         )
-        return {
-            "from_occupation_id": result.from_occupation_id,
-            "to_occupation_id": result.to_occupation_id,
-            "pathways": [
-                {
-                    "pathway_id": pathway.pathway_id,
-                    "pathway_name": pathway.pathway_name,
-                    "starting_occupation": {
-                        "occupation_id": pathway.starting_occupation.occupation_id,
-                        "occupation_title": pathway.starting_occupation.occupation_title,
-                        "soc_code": pathway.starting_occupation.soc_code
-                    } if pathway.starting_occupation else None,
-                    "target_occupation": {
-                        "occupation_id": pathway.target_occupation.occupation_id,
-                        "occupation_title": pathway.target_occupation.occupation_title,
-                        "soc_code": pathway.target_occupation.soc_code
-                    } if pathway.target_occupation else None,
-                    "intermediate_steps": [
-                        {
-                            "occupation_id": step.occupation_id,
-                            "occupation_title": step.occupation_title,
-                            "soc_code": step.soc_code,
-                            "step_order": step.step_order
-                        }
-                        for step in pathway.intermediate_steps
-                    ],
-                    "total_duration": pathway.total_duration,
-                    "difficulty_score": pathway.difficulty_score,
-                    "success_rate": pathway.success_rate
-                }
-                for pathway in result.pathways
-            ],
-            "skill_gaps": [
-                {
-                    "skill_id": gap.skill_id,
-                    "skill_name": gap.skill_name,
-                    "gap_type": gap.gap_type,
-                    "importance": gap.importance,
-                    "training_time": gap.training_time
-                }
-                for gap in result.skill_gaps
-            ],
-            "recommended_training": result.recommended_training
-        }
+        return response.get("data", {})

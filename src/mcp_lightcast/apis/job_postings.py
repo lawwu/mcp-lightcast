@@ -521,12 +521,20 @@ class JobPostingsAPIClient(BaseLightcastClient):
         """
         Get summary of job postings.
         """
-        return await self.get_posting_statistics(
-            occupation_ids=occupation_ids,
-            location=location,
-            date_from=time_period,
+        params = {}
+        if occupation_ids:
+            params["occupation_ids"] = ",".join(occupation_ids)
+        if location:
+            params["location"] = location
+        if time_period:
+            params["time_period"] = time_period
+
+        response = await self.get(
+            f"versions/{version}/summary",
+            params=params,
             version=version
         )
+        return response.get("data", {})
 
     async def get_top_skills(
         self,
@@ -538,25 +546,23 @@ class JobPostingsAPIClient(BaseLightcastClient):
         """
         Get top skills from job postings.
         """
-        skills = await self.analyze_skill_demand(
-            occupation_ids=occupation_ids,
-            location=location,
-            limit=limit,
+        params = {"limit": limit}
+        if occupation_ids:
+            params["occupation_ids"] = ",".join(occupation_ids)
+        if location:
+            params["location"] = location
+
+        response = await self.get(
+            f"versions/{version}/skills",
+            params=params,
             version=version
         )
-        return [
-            {
-                "skill_id": skill.skill_id,
-                "skill_name": skill.skill_name,
-                "posting_count": skill.posting_count,
-                "percentage": skill.percentage_of_postings
-            }
-            for skill in skills
-        ]
+        return response.get("data", [])
 
     async def get_available_facets(self) -> list[dict[str, Any]]:
         """
         Get available facets for job postings filtering.
         """
-        response = await self.get("facets")
-        return response.get("data", [])
+        response = await self.get("meta")
+        facets_data = response.get("data", {})
+        return facets_data.get("facets", [])

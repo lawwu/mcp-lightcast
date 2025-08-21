@@ -172,7 +172,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         }
 
         response = await self.get(
-            f"similarity/versions/{version}/occupations/{occupation_id}/similar",
+            f"versions/{version}/occupations/{occupation_id}/similar",
             params=params,
             version=version
         )
@@ -192,7 +192,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         }
 
         response = await self.get(
-            f"similarity/versions/{version}/skills/{skill_id}/similar",
+            f"versions/{version}/skills/{skill_id}/similar",
             params=params,
             version=version
         )
@@ -211,7 +211,7 @@ class SimilarityAPIClient(BaseLightcastClient):
             params["skill_type"] = skill_type
 
         response = await self.get(
-            f"similarity/versions/{version}/occupations/{occupation_id}/skills",
+            f"versions/{version}/occupations/{occupation_id}/skills",
             params=params,
             version=version
         )

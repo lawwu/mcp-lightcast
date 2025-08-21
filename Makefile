@@ -41,6 +41,9 @@ test-verbose: ## Run tests with verbose output
 test-coverage: ## Run tests with coverage report
 	uv run pytest --cov=src --cov-report=html --cov-report=term
 
+test-mcp: ## Test MCP tools
+	uv run pytest tests/test_mcp_tools_integration.py
+
 test-apis-manual: ## Run comprehensive manual API tests (requires valid credentials)
 	@if [ -f .env ]; then echo "📄 Loading environment from .env file..."; fi
 	uv run --env-file .env python tests/manual_api_integration.py

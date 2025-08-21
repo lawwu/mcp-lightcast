@@ -443,41 +443,35 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         version: str = "latest"
     ) -> dict[str, Any]:
         """
-        Alias for get_occupation_benchmark that returns raw data.
+        Get benchmark data for an occupation (simplified endpoint).
         """
-        result = await self.get_occupation_benchmark(
-            occupation_id=occupation_id,
-            metrics=metrics,
-            region=region,
-            time_period=time_period,
+        params = {}
+        if metrics:
+            params["metrics"] = ",".join(metrics)
+        if region:
+            params["region"] = region
+        if time_period:
+            params["time_period"] = time_period
+
+        response = await self.get(
+            f"versions/{version}/occupations/{occupation_id}",
+            params=params,
             version=version
         )
-        return {
-            "occupation_id": result.occupation_id,
-            "occupation_title": result.occupation_title,
-            "soc_code": result.soc_code,
-            "metrics": [
-                {
-                    "name": metric.metric_name,
-                    "value": metric.value,
-                    "percentile": metric.percentile,
-                    "group": metric.benchmark_group
-                }
-                for metric in result.metrics
-            ],
-            "benchmark_date": result.benchmark_date
-        }
+        return response.get("data", {})
 
     async def get_available_areas(self) -> list[dict[str, Any]]:
         """
         Get available geographic areas for benchmarking.
         """
-        response = await self.get("areas")
-        return response.get("data", [])
+        response = await self.get("meta")
+        areas_data = response.get("data", {})
+        return areas_data.get("areas", [])
 
     async def get_available_metrics(self) -> list[dict[str, Any]]:
         """
         Get available benchmark metrics.
         """
-        response = await self.get("metrics")
-        return response.get("data", [])
+        response = await self.get("meta")
+        metrics_data = response.get("data", {})
+        return metrics_data.get("metrics", [])
