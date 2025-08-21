@@ -1,8 +1,9 @@
 """Lightcast Job Postings API client."""
 
-from typing import Dict, List, Optional, Any, Union
-from datetime import datetime, date
-from pydantic import BaseModel, Field
+from datetime import date
+from typing import Any
+
+from pydantic import BaseModel
 
 from .base import BaseLightcastClient
 
@@ -11,17 +12,17 @@ class JobPosting(BaseModel):
     """Job posting model."""
     posting_id: str
     title: str
-    company: Optional[str] = None
-    location: Optional[str] = None
-    description: Optional[str] = None
-    posted_date: Optional[str] = None
-    salary_min: Optional[float] = None
-    salary_max: Optional[float] = None
-    currency: Optional[str] = "USD"
-    employment_type: Optional[str] = None
-    experience_level: Optional[str] = None
-    skills: Optional[List[str]] = None
-    industries: Optional[List[str]] = None
+    company: str | None = None
+    location: str | None = None
+    description: str | None = None
+    posted_date: str | None = None
+    salary_min: float | None = None
+    salary_max: float | None = None
+    currency: str | None = "USD"
+    employment_type: str | None = None
+    experience_level: str | None = None
+    skills: list[str] | None = None
+    industries: list[str] | None = None
 
 
 class JobPostingStats(BaseModel):
@@ -29,9 +30,9 @@ class JobPostingStats(BaseModel):
     total_postings: int
     unique_postings: int
     total_companies: int
-    date_range: Dict[str, str]
-    top_locations: List[Dict[str, Any]]
-    top_companies: List[Dict[str, Any]]
+    date_range: dict[str, str]
+    top_locations: list[dict[str, Any]]
+    top_companies: list[dict[str, Any]]
 
 
 class SkillDemand(BaseModel):
@@ -40,14 +41,14 @@ class SkillDemand(BaseModel):
     skill_name: str
     posting_count: int
     percentage_of_postings: float
-    median_salary: Optional[float] = None
-    growth_rate: Optional[float] = None
+    median_salary: float | None = None
+    growth_rate: float | None = None
 
 
 class SalaryInsights(BaseModel):
     """Salary insights from job postings."""
-    occupation_id: Optional[str] = None
-    location: Optional[str] = None
+    occupation_id: str | None = None
+    location: str | None = None
     median_salary: float
     mean_salary: float
     percentile_25: float
@@ -62,33 +63,33 @@ class JobMarketTrends(BaseModel):
     time_period: str
     total_postings: int
     growth_rate: float
-    top_growing_skills: List[SkillDemand]
-    top_declining_skills: List[SkillDemand]
-    regional_insights: Optional[List[Dict[str, Any]]] = None
+    top_growing_skills: list[SkillDemand]
+    top_declining_skills: list[SkillDemand]
+    regional_insights: list[dict[str, Any]] | None = None
 
 
 class JobPostingsAPIClient(BaseLightcastClient):
     """Client for Lightcast Job Postings API."""
-    
+
     def __init__(self):
         super().__init__(api_name="job_postings")
-    
+
     async def search_job_postings(
         self,
-        query: Optional[str] = None,
-        occupation_ids: Optional[List[str]] = None,
-        skill_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        company: Optional[str] = None,
-        date_from: Optional[Union[str, date]] = None,
-        date_to: Optional[Union[str, date]] = None,
-        salary_min: Optional[float] = None,
-        salary_max: Optional[float] = None,
-        employment_type: Optional[str] = None,
+        query: str | None = None,
+        occupation_ids: list[str] | None = None,
+        skill_ids: list[str] | None = None,
+        location: str | None = None,
+        company: str | None = None,
+        date_from: str | date | None = None,
+        date_to: str | date | None = None,
+        salary_min: float | None = None,
+        salary_max: float | None = None,
+        employment_type: str | None = None,
         limit: int = 100,
         offset: int = 0,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search job postings with various filters.
         
@@ -114,7 +115,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
             "limit": limit,
             "offset": offset
         }
-        
+
         if query:
             data["query"] = query
         if occupation_ids:
@@ -135,14 +136,14 @@ class JobPostingsAPIClient(BaseLightcastClient):
             data["salary_max"] = salary_max
         if employment_type:
             data["employment_type"] = employment_type
-        
+
         response = await self.post(
             f"posting/versions/{version}/search",
             data=data,
             version=version
         )
         return response.get("data", {})
-    
+
     async def get_job_posting_details(
         self,
         posting_id: str,
@@ -167,13 +168,13 @@ class JobPostingsAPIClient(BaseLightcastClient):
             params["include_skills"] = "true"
         if include_company_info:
             params["include_company"] = "true"
-        
+
         response = await self.get(
             f"posting/versions/{version}/postings/{posting_id}",
             params=params,
             version=version
         )
-        
+
         data = response.get("data", {})
         return JobPosting(
             posting_id=posting_id,
@@ -190,14 +191,14 @@ class JobPostingsAPIClient(BaseLightcastClient):
             skills=data.get("skills", []),
             industries=data.get("industries", [])
         )
-    
+
     async def get_posting_statistics(
         self,
-        occupation_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        industry_ids: Optional[List[str]] = None,
-        date_from: Optional[Union[str, date]] = None,
-        date_to: Optional[Union[str, date]] = None,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        industry_ids: list[str] | None = None,
+        date_from: str | date | None = None,
+        date_to: str | date | None = None,
         version: str = "latest"
     ) -> JobPostingStats:
         """
@@ -225,13 +226,13 @@ class JobPostingsAPIClient(BaseLightcastClient):
             data["date_from"] = str(date_from) if isinstance(date_from, date) else date_from
         if date_to:
             data["date_to"] = str(date_to) if isinstance(date_to, date) else date_to
-        
+
         response = await self.post(
             f"posting/versions/{version}/statistics",
             data=data,
             version=version
         )
-        
+
         stats_data = response.get("data", {})
         return JobPostingStats(
             total_postings=stats_data.get("total_postings", 0),
@@ -241,16 +242,16 @@ class JobPostingsAPIClient(BaseLightcastClient):
             top_locations=stats_data.get("top_locations", []),
             top_companies=stats_data.get("top_companies", [])
         )
-    
+
     async def analyze_skill_demand(
         self,
-        occupation_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        time_period: Optional[str] = None,
-        skill_type: Optional[str] = None,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        time_period: str | None = None,
+        skill_type: str | None = None,
         limit: int = 50,
         version: str = "latest"
-    ) -> List[SkillDemand]:
+    ) -> list[SkillDemand]:
         """
         Analyze skill demand from job postings.
         
@@ -274,13 +275,13 @@ class JobPostingsAPIClient(BaseLightcastClient):
             data["time_period"] = time_period
         if skill_type:
             data["skill_type"] = skill_type
-        
+
         response = await self.post(
             f"posting/versions/{version}/skills/demand",
             data=data,
             version=version
         )
-        
+
         skills = []
         for item in response.get("data", []):
             skills.append(SkillDemand(
@@ -291,18 +292,18 @@ class JobPostingsAPIClient(BaseLightcastClient):
                 median_salary=item.get("median_salary"),
                 growth_rate=item.get("growth_rate")
             ))
-        
+
         return skills
-    
+
     async def get_salary_insights(
         self,
-        occupation_ids: Optional[List[str]] = None,
-        skill_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        experience_level: Optional[str] = None,
-        time_period: Optional[str] = None,
+        occupation_ids: list[str] | None = None,
+        skill_ids: list[str] | None = None,
+        location: str | None = None,
+        experience_level: str | None = None,
+        time_period: str | None = None,
         version: str = "latest"
-    ) -> List[SalaryInsights]:
+    ) -> list[SalaryInsights]:
         """
         Get salary insights from job postings.
         
@@ -328,13 +329,13 @@ class JobPostingsAPIClient(BaseLightcastClient):
             data["experience_level"] = experience_level
         if time_period:
             data["time_period"] = time_period
-        
+
         response = await self.post(
             f"posting/versions/{version}/salaries",
             data=data,
             version=version
         )
-        
+
         insights = []
         for item in response.get("data", []):
             insights.append(SalaryInsights(
@@ -348,15 +349,15 @@ class JobPostingsAPIClient(BaseLightcastClient):
                 sample_size=item["sample_size"],
                 currency=item.get("currency", "USD")
             ))
-        
+
         return insights
-    
+
     async def analyze_market_trends(
         self,
-        occupation_ids: Optional[List[str]] = None,
-        location: Optional[str] = None,
-        industry_ids: Optional[List[str]] = None,
-        time_periods: Optional[List[str]] = None,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        industry_ids: list[str] | None = None,
+        time_periods: list[str] | None = None,
         version: str = "latest"
     ) -> JobMarketTrends:
         """
@@ -381,15 +382,15 @@ class JobPostingsAPIClient(BaseLightcastClient):
             data["industry_ids"] = industry_ids
         if time_periods:
             data["time_periods"] = time_periods
-        
+
         response = await self.post(
             f"posting/versions/{version}/trends",
             data=data,
             version=version
         )
-        
+
         trends_data = response.get("data", {})
-        
+
         # Parse growing skills
         growing_skills = []
         for skill_data in trends_data.get("growing_skills", []):
@@ -401,7 +402,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
                 median_salary=skill_data.get("median_salary"),
                 growth_rate=skill_data.get("growth_rate")
             ))
-        
+
         # Parse declining skills
         declining_skills = []
         for skill_data in trends_data.get("declining_skills", []):
@@ -413,7 +414,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
                 median_salary=skill_data.get("median_salary"),
                 growth_rate=skill_data.get("growth_rate")
             ))
-        
+
         return JobMarketTrends(
             time_period=trends_data.get("time_period", ""),
             total_postings=trends_data.get("total_postings", 0),
@@ -422,15 +423,15 @@ class JobPostingsAPIClient(BaseLightcastClient):
             top_declining_skills=declining_skills,
             regional_insights=trends_data.get("regional_insights")
         )
-    
+
     async def get_company_insights(
         self,
         company_name: str,
         include_postings: bool = False,
         include_skills: bool = True,
-        time_period: Optional[str] = None,
+        time_period: str | None = None,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get insights about a specific company's job postings.
         
@@ -451,21 +452,21 @@ class JobPostingsAPIClient(BaseLightcastClient):
             params["include_skills"] = "true"
         if time_period:
             params["time_period"] = time_period
-        
+
         response = await self.get(
             f"posting/versions/{version}/companies/{company_name}/insights",
             params=params,
             version=version
         )
         return response.get("data", {})
-    
+
     async def extract_skills_from_posting(
         self,
         job_description: str,
         confidence_threshold: float = 0.7,
         include_soft_skills: bool = True,
         version: str = "latest"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Extract skills from a job posting description.
         
@@ -483,18 +484,18 @@ class JobPostingsAPIClient(BaseLightcastClient):
             "confidence_threshold": confidence_threshold,
             "include_soft_skills": include_soft_skills
         }
-        
+
         response = await self.post(
             f"posting/versions/{version}/extract/skills",
             data=data,
             version=version
         )
         return response.get("data", [])
-    
+
     async def get_postings_metadata(
         self,
         version: str = "latest"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get Job Postings API metadata and version information.
         
@@ -509,3 +510,53 @@ class JobPostingsAPIClient(BaseLightcastClient):
             version=version
         )
         return response.get("data", {})
+
+    async def get_postings_summary(
+        self,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        time_period: str | None = None,
+        version: str = "latest"
+    ) -> dict[str, Any]:
+        """
+        Get summary of job postings.
+        """
+        return await self.get_posting_statistics(
+            occupation_ids=occupation_ids,
+            location=location,
+            date_from=time_period,
+            version=version
+        )
+
+    async def get_top_skills(
+        self,
+        occupation_ids: list[str] | None = None,
+        location: str | None = None,
+        limit: int = 20,
+        version: str = "latest"
+    ) -> list[dict[str, Any]]:
+        """
+        Get top skills from job postings.
+        """
+        skills = await self.analyze_skill_demand(
+            occupation_ids=occupation_ids,
+            location=location,
+            limit=limit,
+            version=version
+        )
+        return [
+            {
+                "skill_id": skill.skill_id,
+                "skill_name": skill.skill_name,
+                "posting_count": skill.posting_count,
+                "percentage": skill.percentage_of_postings
+            }
+            for skill in skills
+        ]
+
+    async def get_available_facets(self) -> list[dict[str, Any]]:
+        """
+        Get available facets for job postings filtering.
+        """
+        response = await self.get("facets")
+        return response.get("data", [])
