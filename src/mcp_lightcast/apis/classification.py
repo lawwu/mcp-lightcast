@@ -29,10 +29,17 @@ class TitleNormalizationResult(BaseModel):
     alternatives: Optional[List[Dict[str, Any]]] = None
 
 
+class SkillExtractionResult(BaseModel):
+    """Skill extraction result."""
+    concept: Dict[str, Any]
+    confidence: float
+    
+
 class SkillsExtractionResult(BaseModel):
     """Skills extraction result."""
-    extracted_skills: List[Dict[str, Any]]
-    confidence_scores: Dict[str, float]
+    concepts: List[SkillExtractionResult]
+    trace: Optional[List[Dict[str, Any]]] = None
+    warnings: Optional[List[str]] = None
 
 
 class BulkClassificationRequest(BaseModel):
@@ -47,294 +54,370 @@ class ClassificationAPIClient(BaseLightcastClient):
     def __init__(self):
         super().__init__(api_name="classification")
     
-    async def map_concepts_to_occupations(
+    async def get_version_metadata(
         self,
-        concepts: List[str],
-        limit: int = 10,
-        confidence_threshold: float = 0.5,
-        version: str = "latest"
-    ) -> List[ConceptMapping]:
+        version: str = "2025.8"
+    ) -> Dict[str, Any]:
         """
-        Map concepts to relevant occupations.
+        Get Classification API version metadata.
         
         Args:
-            concepts: List of concepts/job titles to map
-            limit: Maximum number of occupations per concept
-            confidence_threshold: Minimum confidence score
-            version: API version to use
+            version: API version to use (e.g., '2025.8', '2025.7')
             
         Returns:
-            List of concept mappings with occupations
+            Version metadata information
         """
-        data = {
-            "concepts": concepts,
-            "limit": limit,
-            "confidence_threshold": confidence_threshold
-        }
-        
         response = await self._make_request(
-            "POST", 
-            f"classification/versions/{version}/map",
-            data=data,
-            version=version
+            "GET",
+            f"classifications/{version}"
         )
         
-        result = []
-        for mapping in response.get("data", []):
-            concept_mapping = ConceptMapping(
-                concept=mapping["concept"],
-                occupations=[
-                    OccupationMapping(
-                        id=occ["id"],
-                        title=occ["title"],
-                        code=occ.get("soc_code", ""),
-                        confidence=occ["confidence"],
-                        type=occ.get("type")
-                    )
-                    for occ in mapping.get("occupations", [])
-                ]
-            )
-            result.append(concept_mapping)
-        
-        return result
+        # Response is the full JSON object from the API
+        if isinstance(response, dict):
+            data = response.get("data", {})
+            if isinstance(data, dict):
+                return data
+            elif isinstance(data, list) and len(data) > 0:
+                return data[0] if isinstance(data[0], dict) else {"items": data}
+            else:
+                return {"raw_response": data}
+        else:
+            return {"raw_response": response}
     
-    async def normalize_job_title(
-        self,
-        title: str,
-        version: str = "latest"
-    ) -> TitleNormalizationResult:
+    async def get_available_versions(
+        self
+    ) -> List[str]:
         """
-        Normalize a job title to standard occupation classification.
+        Get available Classification API versions.
         
-        Args:
-            title: Raw job title to normalize
-            version: API version to use
-            
         Returns:
-            Normalized title with SOC code and confidence
+            List of available version numbers
         """
         response = await self._make_request(
-            "POST",
-            f"classification/versions/{version}/normalize",
-            data=title,
-            version=version
+            "GET",
+            "classifications"
         )
         
-        data = response.get("data", {})
-        return TitleNormalizationResult(
-            normalized_title=data["normalized_title"],
-            soc_code=data["soc_code"],
-            confidence=data["confidence"],
-            alternatives=data.get("alternatives", [])
-        )
+        # Extract versions from the response
+        data = response.get("data", [])
+        if isinstance(data, list):
+            # Extract just the version numbers from the full version objects
+            versions = []
+            for item in data:
+                if isinstance(item, dict) and "release" in item:
+                    versions.append(item["release"])
+            return versions
+        return []
     
-    async def extract_skills_from_description(
+    async def extract_skills_from_text(
         self,
-        description: str,
+        text: str,
         confidence_threshold: float = 0.6,
-        version: str = "latest"
+        trace: bool = True,
+        input_locale: str = "en-US",
+        output_locale: str = "en-US",
+        version: str = "2025.8"
     ) -> SkillsExtractionResult:
         """
-        Extract skills from job description text.
+        Extract skills from text using the Classification API.
         
         Args:
-            description: Job description text
+            text: Text to extract skills from
             confidence_threshold: Minimum confidence for skill extraction
-            version: API version to use
+            trace: Whether to include trace information
+            input_locale: Input text locale
+            output_locale: Output locale for skill names
+            version: API version to use (e.g., '2025.8', '2025.7')
             
         Returns:
             Extracted skills with confidence scores
         """
         data = {
-            "description": description,
-            "confidence_threshold": confidence_threshold
+            "text": text,
+            "confidenceThreshold": confidence_threshold,
+            "trace": trace,
+            "inputLocale": input_locale,
+            "outputLocale": output_locale
         }
         
         response = await self._make_request(
             "POST",
-            f"classification/versions/{version}/extract-skills",
-            data=data,
-            version=version
+            f"classifications/{version}/skills/extract",
+            data=data
         )
         
+        # Parse response according to actual API format
         result_data = response.get("data", {})
+        warnings = response.get("warnings", [])
+        
+        # The data contains concepts, not a direct list
+        concepts_data = result_data.get("concepts", [])
+        trace_data = result_data.get("trace", [])
+        
+        skill_results = []
+        for item in concepts_data:
+            skill_results.append(SkillExtractionResult(
+                concept=item.get("concept", {}),
+                confidence=item.get("confidence", 0.0)
+            ))
+        
         return SkillsExtractionResult(
-            extracted_skills=result_data.get("skills", []),
-            confidence_scores=result_data.get("confidence_scores", {})
+            concepts=skill_results,
+            trace=trace_data,
+            warnings=warnings
         )
     
-    async def classify_occupation_level(
-        self,
-        occupation_title: str,
-        version: str = "latest"
+    async def get_api_status(
+        self
     ) -> Dict[str, Any]:
         """
-        Classify occupation by level (entry, mid, senior, etc.).
+        Get Classification API status.
         
-        Args:
-            occupation_title: Occupation title to classify
-            version: API version to use
-            
         Returns:
-            Classification with level and confidence
-        """
-        response = await self._make_request(
-            "POST",
-            f"classification/versions/{version}/classify-level",
-            data={"title": occupation_title},
-            version=version
-        )
-        
-        return response.get("data", {})
-    
-    async def get_occupation_hierarchy(
-        self,
-        soc_code: str,
-        version: str = "latest"
-    ) -> Dict[str, Any]:
-        """
-        Get occupation hierarchy for a SOC code.
-        
-        Args:
-            soc_code: Standard Occupational Classification code
-            version: API version to use
-            
-        Returns:
-            Occupation hierarchy information
+            API status information
         """
         response = await self._make_request(
             "GET",
-            f"classification/versions/{version}/hierarchy/{soc_code}",
-            version=version
+            "status"
         )
         
         return response.get("data", {})
     
-    async def search_occupations(
+    async def get_api_metadata(
+        self
+    ) -> Dict[str, Any]:
+        """
+        Get Classification API metadata.
+        
+        Returns:
+            API metadata information
+        """
+        response = await self._make_request(
+            "GET",
+            "meta"
+        )
+        
+        return response.get("data", {})
+    
+    async def list_skills(
         self,
-        query: str,
-        limit: int = 20,
-        soc_level: Optional[int] = None,
-        version: str = "latest"
+        version: str = "2025.8",
+        limit: int = 100,
+        offset: int = 0
     ) -> List[Dict[str, Any]]:
         """
-        Search occupations by query.
+        List available skills in the classification system.
         
         Args:
-            query: Search query
-            limit: Maximum number of results
-            soc_level: SOC classification level (2, 3, 4, 5, 6)
             version: API version to use
+            limit: Maximum number of skills to return
+            offset: Number of skills to skip
             
         Returns:
-            List of matching occupations
+            List of available skills
         """
         params = {
-            "q": query,
-            "limit": limit
+            "limit": limit,
+            "offset": offset
         }
-        
-        if soc_level:
-            params["soc_level"] = soc_level
         
         response = await self._make_request(
             "GET",
-            f"classification/versions/{version}/occupations",
-            params=params,
-            version=version
+            f"classifications/{version}/skills",
+            params=params
         )
         
         return response.get("data", [])
     
-    async def bulk_classify_concepts(
+    async def list_titles(
         self,
-        requests: List[BulkClassificationRequest],
-        version: str = "latest"
+        version: str = "2025.8",
+        limit: int = 100,
+        offset: int = 0
     ) -> List[Dict[str, Any]]:
         """
-        Perform bulk classification of multiple concept sets.
+        List available titles in the classification system.
         
         Args:
-            requests: List of bulk classification requests
+            version: API version to use
+            limit: Maximum number of titles to return
+            offset: Number of titles to skip
+            
+        Returns:
+            List of available titles
+        """
+        params = {
+            "limit": limit,
+            "offset": offset
+        }
+        
+        response = await self._make_request(
+            "GET",
+            f"classifications/{version}/titles",
+            params=params
+        )
+        
+        return response.get("data", [])
+    
+    async def normalize_skill(
+        self,
+        skill_text: str,
+        confidence_threshold: float = 0.6,
+        version: str = "2025.8"
+    ) -> Dict[str, Any]:
+        """
+        Normalize a skill name to standard classification.
+        
+        Args:
+            skill_text: Skill text to normalize
+            confidence_threshold: Minimum confidence for normalization
             version: API version to use
             
         Returns:
-            List of classification results
+            Normalized skill information
         """
         data = {
-            "requests": [req.model_dump() for req in requests]
+            "text": skill_text,
+            "confidenceThreshold": confidence_threshold
         }
         
         response = await self._make_request(
             "POST",
-            f"classification/versions/{version}/bulk",
-            data=data,
-            version=version
+            f"classifications/{version}/skills/normalize",
+            data=data
+        )
+        
+        return response.get("data", {})
+    
+    async def normalize_title(
+        self,
+        title_text: str,
+        confidence_threshold: float = 0.6,
+        version: str = "2025.8"
+    ) -> Dict[str, Any]:
+        """
+        Normalize a job title to standard classification.
+        
+        Args:
+            title_text: Title text to normalize
+            confidence_threshold: Minimum confidence for normalization
+            version: API version to use
+            
+        Returns:
+            Normalized title information
+        """
+        data = {
+            "text": title_text,
+            "confidenceThreshold": confidence_threshold
+        }
+        
+        response = await self._make_request(
+            "POST",
+            f"classifications/{version}/titles/normalize",
+            data=data
+        )
+        
+        return response.get("data", {})
+    
+    async def extract_occupations_from_text(
+        self,
+        text: str,
+        confidence_threshold: float = 0.6,
+        version: str = "2025.8"
+    ) -> List[Dict[str, Any]]:
+        """
+        Extract occupations from text (if available).
+        
+        Args:
+            text: Text to extract occupations from
+            confidence_threshold: Minimum confidence for extraction
+            version: API version to use
+            
+        Returns:
+            List of extracted occupations
+        """
+        data = {
+            "text": text,
+            "confidenceThreshold": confidence_threshold
+        }
+        
+        response = await self._make_request(
+            "POST",
+            f"classifications/{version}/occupations/extract",
+            data=data
         )
         
         return response.get("data", [])
     
-    async def get_soc_metadata(
-        self,
-        version: str = "latest"
-    ) -> Dict[str, Any]:
+    async def get_available_mappings(self) -> Dict[str, Any]:
         """
-        Get SOC (Standard Occupational Classification) metadata.
+        Get all available mappings from the Classification API.
         
-        Args:
-            version: API version to use
-            
         Returns:
-            SOC classification metadata
+            Dictionary containing all available mappings
         """
         response = await self._make_request(
             "GET",
-            f"classification/versions/{version}/soc/meta",
-            version=version
+            "mappings"
         )
         
         return response.get("data", {})
     
-    async def validate_soc_code(
+    async def map_concepts(
         self,
-        soc_code: str,
-        version: str = "latest"
+        mapping_name: str,
+        id_list: List[str]
     ) -> Dict[str, Any]:
         """
-        Validate a SOC code and get its details.
+        Map taxonomy item IDs using a specific mapping.
         
         Args:
-            soc_code: SOC code to validate
-            version: API version to use
+            mapping_name: Name of the mapping to use (e.g., "titles_v5.24.0_lot_v6.20.0")
+            id_list: List of taxonomy item IDs to map
             
         Returns:
-            SOC code validation and details
+            Dictionary with mapped IDs
+            
+        Example:
+            mapping = await client.map_concepts(
+                "titles_v5.24.0_lot_v6.20.0", 
+                ["ET6850661D6AE5FA86"]
+            )
         """
+        data = {"ids": id_list}
+        
         response = await self._make_request(
-            "GET",
-            f"classification/versions/{version}/soc/{soc_code}",
-            version=version
+            "POST",
+            f"mappings/{mapping_name}",
+            data=data
         )
         
-        return response.get("data", {})
+        return response
     
-    async def get_classification_metadata(
+    async def map_title_id_to_lotspecocc_id(
         self,
-        version: str = "latest"
-    ) -> Dict[str, Any]:
+        title_id: str,
+        mapping_name: str = "titles_v5.24.0_lot_v6.20.0"
+    ) -> str:
         """
-        Get Classification API metadata and version information.
+        Map title ID to LOT Specialized Occupation ID.
         
         Args:
-            version: API version to use
+            title_id: Title ID to map
+            mapping_name: Mapping name to use
             
         Returns:
-            API metadata and version information
+            LOT Specialized Occupation ID
+            
+        Raises:
+            KeyError: If mapping is not found for the given title ID
         """
-        response = await self._make_request(
-            "GET",
-            f"classification/versions/{version}",
-            version=version
-        )
+        # Mapping from EMSI Titles to LOT Specialized Occupations
+        response = await self.map_concepts(mapping_name, [title_id])
+        data = response.get("data", {})
         
-        return response.get("data", {})
+        if data and data.get(title_id):
+            lotspecocc_id = data[title_id][0]  # Take the first mapped ID
+            return lotspecocc_id
+        else:
+            raise KeyError(f"Lightcast could not find mappings for given title ID: {title_id}")

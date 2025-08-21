@@ -132,7 +132,7 @@ class SkillsAPIClient(BaseLightcastClient):
         """Extract skills from a text description."""
         data = {
             "text": text,
-            "confidence_threshold": confidence_threshold
+            "confidenceThreshold": confidence_threshold
         }
         response = await self.post(f"skills/versions/{version}/extract", data=data, version=version)
         return response.get("data", [])

@@ -28,6 +28,135 @@ class SimilarityAPIClient(BaseLightcastClient):
     def __init__(self):
         super().__init__(api_name="similarity")
     
+    # Working endpoints discovered from testing
+    async def get_available_models(self) -> List[str]:
+        """
+        Get list of available similarity models.
+        
+        Returns:
+            List of available model names
+        """
+        response = await self.get("models")
+        return response.get("data", [])
+    
+    async def get_api_metadata(self) -> Dict[str, Any]:
+        """
+        Get comprehensive API metadata including model versions and taxonomy info.
+        
+        Returns:
+            API metadata with models, versions, and supported taxonomies
+        """
+        response = await self.get("meta")
+        return response.get("data", {})
+    
+    async def get_api_status(self) -> Dict[str, Any]:
+        """
+        Get API health status.
+        
+        Returns:
+            API health status information
+        """
+        response = await self.get("status")
+        return response.get("data", {})
+    
+    async def get_api_documentation(self) -> str:
+        """
+        Get API documentation.
+        
+        Returns:
+            API documentation content
+        """
+        response = await self.get("docs")
+        return response if isinstance(response, str) else str(response)
+    
+    async def find_similar_occupations_soc(
+        self,
+        soc_code: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Find occupations similar to a given SOC code.
+        
+        Args:
+            soc_code: SOC occupation code (e.g., "15-1132.00")
+            limit: Maximum number of results
+            
+        Returns:
+            List of similar occupations with similarity scores
+        """
+        data = {
+            "input": soc_code,
+            "limit": limit
+        }
+        response = await self.post("models/soc", data=data)
+        return response.get("data", [])
+    
+    async def find_similar_occupations_lotocc(
+        self,
+        lot_id: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Find occupations similar to a given LOT occupation ID.
+        
+        Args:
+            lot_id: LOT occupation ID (e.g., "7.39")
+            limit: Maximum number of results
+            
+        Returns:
+            List of similar occupations with similarity scores
+        """
+        data = {
+            "input": lot_id,
+            "limit": limit
+        }
+        response = await self.post("models/lotocc", data=data)
+        return response.get("data", [])
+    
+    async def find_similar_occupations_onet(
+        self,
+        onet_code: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Find occupations similar to a given O*NET code.
+        
+        Args:
+            onet_code: O*NET occupation code
+            limit: Maximum number of results
+            
+        Returns:
+            List of similar occupations with similarity scores
+        """
+        data = {
+            "input": onet_code,
+            "limit": limit
+        }
+        response = await self.post("models/onet", data=data)
+        return response.get("data", [])
+    
+    async def find_similar_skills(
+        self,
+        skill_ids: List[str],
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Find skills similar to given skill IDs.
+        
+        Args:
+            skill_ids: List of skill IDs
+            limit: Maximum number of results
+            
+        Returns:
+            List of similar skills with similarity scores
+        """
+        data = {
+            "input": skill_ids,
+            "limit": limit
+        }
+        response = await self.post("models/skill", data=data)
+        return response.get("data", [])
+    
     async def find_similar_occupations(
         self,
         occupation_id: str,

@@ -35,6 +35,7 @@ from .tools.similarity_tools import register_similarity_tools
 from .tools.occupation_benchmark_tools import register_occupation_benchmark_tools
 from .tools.career_pathways_tools import register_career_pathways_tools
 from .tools.job_postings_tools import register_job_postings_tools
+from .tools.unified_skills_tools import register_unified_skills_tools
 
 
 # Configure logging
@@ -66,6 +67,7 @@ register_similarity_tools(mcp)
 register_occupation_benchmark_tools(mcp)
 register_career_pathways_tools(mcp)
 register_job_postings_tools(mcp)
+register_unified_skills_tools(mcp)
 
 # Add server metadata
 @mcp.resource("lightcast://server/info")
