@@ -114,7 +114,7 @@ class SkillsAPIClient(BaseLightcastClient):
         version: str = "latest"
     ) -> dict[str, Any]:
         """Get metadata about the skills taxonomy."""
-        response = await self.get(f"skills/versions/{version}/meta", version=version)
+        response = await self.get(f"skills/versions/{version}", version=version)
         return response.get("data", {})
 
     async def get_skill_types(

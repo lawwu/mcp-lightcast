@@ -97,15 +97,26 @@ class TitlesAPIClient(BaseLightcastClient):
         version: str = "5.47"
     ) -> dict[str, Any]:
         """Get the hierarchical structure for a title."""
-        response = await self.get(f"versions/{version}/titles/{title_id}/hierarchy", version=version)
-        return response.get("data", {})
+        # This endpoint may not be available in the current API version
+        try:
+            response = await self.get(f"versions/{version}/titles/{title_id}/parent", version=version)
+            return response.get("data", {})
+        except Exception:
+            # Fallback: return title details which include parent/children if available
+            title_detail = await self.get_title_by_id(title_id, version)
+            return {
+                "id": title_detail.id,
+                "name": title_detail.name,
+                "parent": title_detail.parent,
+                "children": title_detail.children
+            }
 
     async def get_titles_metadata(
         self,
         version: str = "5.47"
     ) -> dict[str, Any]:
         """Get metadata about the titles taxonomy."""
-        response = await self.get(f"versions/{version}/meta", version=version)
+        response = await self.get(f"versions/{version}", version=version)
         return response.get("data", {})
 
     async def get_version_metadata(

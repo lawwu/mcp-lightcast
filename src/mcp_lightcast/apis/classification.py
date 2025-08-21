@@ -277,11 +277,8 @@ class ClassificationAPIClient(BaseLightcastClient):
         Returns:
             Normalized skill information
         """
-        data = {
-            "text": skill_text,
-            "confidenceThreshold": confidence_threshold
-        }
-
+        # Send as JSON data
+        data = {"text": skill_text}
         response = await self._make_request(
             "POST",
             f"classifications/{version}/skills/normalize",
@@ -307,11 +304,8 @@ class ClassificationAPIClient(BaseLightcastClient):
         Returns:
             Normalized title information
         """
-        data = {
-            "text": title_text,
-            "confidenceThreshold": confidence_threshold
-        }
-
+        # Send as JSON data
+        data = {"text": title_text}
         response = await self._make_request(
             "POST",
             f"classifications/{version}/titles/normalize",
