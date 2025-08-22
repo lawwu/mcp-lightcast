@@ -27,14 +27,12 @@ except ImportError:
 
     server_config = ServerConfig()
 
-from .tools.career_pathways_tools import register_career_pathways_tools
 from .tools.classification_tools import register_classification_tools
 from .tools.job_postings_tools import register_job_postings_tools
 from .tools.occupation_benchmark_tools import register_occupation_benchmark_tools
 from .tools.similarity_tools import register_similarity_tools
 from .tools.skills_tools import register_skills_tools
 from .tools.titles_tools import register_titles_tools
-from .tools.unified_skills_tools import register_unified_skills_tools
 from .tools.workflow_tools import register_workflow_tools
 
 # Configure logging
@@ -57,16 +55,14 @@ mcp = FastMCP(
 
 # Note: Error handling is built into FastMCP, no need for custom handler
 
-# Register all tool categories
-register_titles_tools(mcp)
+# Register streamlined tool categories
 register_skills_tools(mcp)
-register_workflow_tools(mcp)
-register_classification_tools(mcp)
-register_similarity_tools(mcp)
-register_occupation_benchmark_tools(mcp)
-register_career_pathways_tools(mcp)
+register_titles_tools(mcp)
 register_job_postings_tools(mcp)
-register_unified_skills_tools(mcp)
+register_classification_tools(mcp)
+register_occupation_benchmark_tools(mcp)
+register_similarity_tools(mcp)
+register_workflow_tools(mcp)
 
 # Add server metadata
 @mcp.resource("lightcast://server/info")
