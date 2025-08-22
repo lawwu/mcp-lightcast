@@ -3,12 +3,12 @@
 [![PyPI Version](https://img.shields.io/pypi/v/mcp-lightcast)](https://pypi.org/project/mcp-lightcast/)
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![CI/CD Pipeline](https://github.com/your-org/mcp-lightcast/workflows/Release/badge.svg)](https://github.com/your-org/mcp-lightcast/actions)
+[![CI/CD Pipeline](https://github.com/lawwu/mcp-lightcast/workflows/Release/badge.svg)](https://github.com/lawwu/mcp-lightcast/actions)
 [![API Coverage](https://img.shields.io/badge/API%20coverage-11/18%20endpoints-yellow)](TESTING_SUMMARY.md)
 
 A production-ready Model Context Protocol (MCP) server that provides seamless integration with Lightcast APIs for job titles, skills analysis, and career data. Built with FastMCP and modern Python development practices.
 
-**🎯 Current Status: v0.1.0 - Production Ready with 61% API Coverage (11/18 endpoints working)**
+**🎯 Current Status: v0.2.0 - Production Ready with 61% API Coverage (11/18 endpoints working)**
 
 ## 🚀 Features
 
@@ -103,7 +103,7 @@ mcp-lightcast --help
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/mcp-lightcast.git
+git clone https://github.com/lawwu/mcp-lightcast.git
 cd mcp-lightcast
 
 # 2. Set up development environment 
@@ -123,16 +123,16 @@ make run
 
 ```bash
 # Pull the latest image (when available)
-docker pull ghcr.io/your-org/mcp-lightcast:latest
+docker pull ghcr.io/lawwu/mcp-lightcast:latest
 
 # Run with environment variables
 docker run --rm -it \
   -e LIGHTCAST_CLIENT_ID=your_id \
   -e LIGHTCAST_CLIENT_SECRET=your_secret \
-  ghcr.io/your-org/mcp-lightcast:latest
+  ghcr.io/lawwu/mcp-lightcast:latest
 
 # Or with environment file
-docker run --rm -it --env-file .env ghcr.io/your-org/mcp-lightcast:latest
+docker run --rm -it --env-file .env ghcr.io/lawwu/mcp-lightcast:latest
 ```
 
 ## ⚙️ Configuration
@@ -262,7 +262,7 @@ make claude-config
         "-i",
         "-e", "LIGHTCAST_CLIENT_ID",
         "-e", "LIGHTCAST_CLIENT_SECRET",
-        "ghcr.io/your-org/mcp-lightcast:latest"
+        "ghcr.io/lawwu/mcp-lightcast:latest"
       ],
       "env": {
         "LIGHTCAST_CLIENT_ID": "your_client_id",
@@ -493,7 +493,7 @@ print(f"Titles API v{titles_meta['version']}: {titles_meta['title_count']:,} tit
 
 ```bash
 # Clone and setup
-git clone https://github.com/your-org/mcp-lightcast.git
+git clone https://github.com/lawwu/mcp-lightcast.git
 cd mcp-lightcast
 
 # Quick setup (installs dependencies, creates .env)
@@ -638,7 +638,7 @@ search_skills("python", version="9.32")
 
 ## 📈 Current Limitations & Future Enhancements
 
-### ⚠️ **Known Limitations (v0.1.0)**
+### ⚠️ **Known Limitations (v0.2.0)**
 
 #### **Authentication Scope Limitations**
 - **Title Normalization**: Requires premium authentication scope (currently 401 Unauthorized)
@@ -700,16 +700,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### **Project Resources**
 - [PyPI Package](https://pypi.org/project/mcp-lightcast/) - Official Python package
-- [GitHub Repository](https://github.com/your-org/mcp-lightcast) - Source code and issues
-- [GitHub Releases](https://github.com/your-org/mcp-lightcast/releases) - Version history and changelog
+- [GitHub Repository](https://github.com/lawwu/mcp-lightcast) - Source code and issues
+- [GitHub Releases](https://github.com/lawwu/mcp-lightcast/releases) - Version history and changelog
 
 ### **Getting Help**
-- **Issues**: [GitHub Issues](https://github.com/your-org/mcp-lightcast/issues) for bugs and feature requests
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/mcp-lightcast/discussions) for questions and community support
+- **Issues**: [GitHub Issues](https://github.com/lawwu/mcp-lightcast/issues) for bugs and feature requests
+- **Discussions**: [GitHub Discussions](https://github.com/lawwu/mcp-lightcast/discussions) for questions and community support
 - **Lightcast Support**: [Contact Lightcast](https://docs.lightcast.dev/contact) for API access and credentials
 
 ### **Current Status**
-- **Version**: 0.1.0 (Production Ready)
+- **Version**: 0.2.0 (Production Ready)
 - **API Coverage**: 11/18 endpoints (61%)
 - **Python**: 3.12+ required
 - **License**: MIT
