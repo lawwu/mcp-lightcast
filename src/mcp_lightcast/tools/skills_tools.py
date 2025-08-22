@@ -141,6 +141,35 @@ def register_skills_tools(mcp: FastMCP):
             ]
 
     @mcp.tool
+    async def get_related_skills_bulk(
+        skill_ids: list[str],
+        version: str = "latest"
+    ) -> list[dict[str, Any]]:
+        """
+        Get skills related to multiple skills at once.
+        
+        Args:
+            skill_ids: List of skill IDs to find related skills for
+            version: API version to use (default: "latest")
+            
+        Returns:
+            List of related skills with their details
+        """
+        async with SkillsAPIClient() as client:
+            results = await client.get_related_skills_bulk(skill_ids, version)
+            return [
+                {
+                    "id": result.id,
+                    "name": result.name,
+                    "type": result.type.name if result.type else None,
+                    "type_id": result.type.id if result.type else None,
+                    "category": result.category,
+                    "subcategory": result.subcategory
+                }
+                for result in results
+            ]
+
+    @mcp.tool
     async def get_skill_types(
         version: str = "latest"
     ) -> list[dict[str, str]]:

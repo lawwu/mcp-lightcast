@@ -506,20 +506,18 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         version: str = "latest"
     ) -> dict[str, Any]:
         """
-        Get pathway analysis between two occupations (simplified endpoint).
+        Get pathway analysis between two occupations.
+        Note: This endpoint is not available in the current API version.
         """
-        params = {
-            "from_occupation": from_occupation_id,
-            "to_occupation": to_occupation_id,
+        # Since the pathways analysis endpoint is not available,
+        # return a simulated response with available metadata
+        return {
+            "from_occupation_id": from_occupation_id,
+            "to_occupation_id": to_occupation_id,
+            "region": region or "us",
             "max_steps": max_steps,
-            "include_skills": include_skill_analysis
+            "include_skills": include_skill_analysis,
+            "note": "Pathway analysis endpoint not available in current API version",
+            "available_data": "Use get_available_dimensions() and get_api_metadata() for supported features",
+            "status": "simulated_response"
         }
-        if region:
-            params["region"] = region
-
-        response = await self.get(
-            f"versions/{version}/analyze",
-            params=params,
-            version=version
-        )
-        return response.get("data", {})

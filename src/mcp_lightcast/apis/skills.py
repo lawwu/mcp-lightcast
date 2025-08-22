@@ -105,8 +105,18 @@ class SkillsAPIClient(BaseLightcastClient):
         version: str = "latest"
     ) -> list[SkillSearchResult]:
         """Get skills related to a specific skill."""
-        params = {"limit": limit}
-        response = await self.get(f"skills/versions/{version}/skills/{skill_id}/related", params=params, version=version)
+        data = {"ids": [skill_id]}
+        response = await self.post(f"skills/versions/{version}/related", data=data, version=version)
+        return [SkillSearchResult(**item) for item in response.get("data", [])]
+
+    async def get_related_skills_bulk(
+        self,
+        skill_ids: list[str],
+        version: str = "latest"
+    ) -> list[SkillSearchResult]:
+        """Get skills related to multiple skills."""
+        data = {"ids": skill_ids}
+        response = await self.post(f"skills/versions/{version}/related", data=data, version=version)
         return [SkillSearchResult(**item) for item in response.get("data", [])]
 
     async def get_skills_metadata(
