@@ -4,132 +4,144 @@
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![CI/CD Pipeline](https://github.com/lawwu/mcp-lightcast/workflows/Release/badge.svg)](https://github.com/lawwu/mcp-lightcast/actions)
-[![API Coverage](https://img.shields.io/badge/API%20coverage-11/18%20endpoints-yellow)](TESTING_SUMMARY.md)
 
 A production-ready Model Context Protocol (MCP) server that provides seamless integration with Lightcast APIs for job titles, skills analysis, and career data. Built with FastMCP and modern Python development practices.
 
-**🎯 Current Status: v0.2.0 - Production Ready with 61% API Coverage (11/18 endpoints working)**
+**🎯 Current Status: v0.2.1**
 
 ## 🚀 Features
 
-### ✅ **Working APIs & Endpoints (11/18 total)**
+### ✅ **Working APIs & Endpoints**
 
-#### **🎯 Skills API (6/10 endpoints)** - Version 9.33, 41,139 skills
+#### **🎯 Skills API (9/9 endpoints)** - Version 9.33, 41,139 skills
 - ✅ **Skills Search** - Search with filters (type, category, subcategory)
 - ✅ **Individual Skill Retrieval** - Get detailed skill information by ID
 - ✅ **Skills Extraction from Text** - Extract skills from job descriptions with confidence scores
 - ✅ **Bulk Skills Retrieval** - Efficient batch processing of multiple skills
+- ✅ **Related Skills** - Find skills related to a specific skill (POST endpoint working)
+- ✅ **Similar Skills** - Find similar skills via Similarity API
+- ✅ **Skill Types** - Get all available skill types
 - ✅ **Version Metadata** - Complete API version and statistics information
 - ✅ **Skills Metadata** - General skills taxonomy information
 
-#### **🏷️ Titles API (5/8 endpoints)** - Version 5.47, 73,993 titles
+#### **🏷️ Titles API (8/8 endpoints)** - Version 5.47, 73,993 titles
 - ✅ **Job Title Search** - Search Lightcast's comprehensive job title database
 - ✅ **Individual Title Retrieval** - Get detailed title information by ID
 - ✅ **Bulk Title Retrieval** - Efficient batch processing of multiple titles
+- ✅ **Title Normalization** - Normalize raw job titles
+- ✅ **Title Hierarchy** - Get hierarchical structure for titles
 - ✅ **Version Metadata** - Complete API version and statistics information
 - ✅ **General Metadata** - Latest version and attribution information
+- ✅ **Full Metadata** - Comprehensive taxonomy information
 
-### 🔧 **Core Functionality Working**
+#### **🔄 Classification API (5/5 endpoints)** - Version 2025.8
+- ✅ **Skills Extraction** - Extract skills from text using classification models
+- ✅ **Available Versions** - Get all available API versions
+- ✅ **Version Metadata** - Detailed version information
+- ✅ **Skill Normalization** - Normalize skill text via extraction
+- ✅ **Title Normalization** - Normalize title text with fallback
+
+#### **🔗 Similarity API (7/7 endpoints)** - Premium Features
+- ✅ **Available Models** - Get all similarity models
+- ✅ **API Metadata** - Similarity API capabilities
+- ✅ **Occupation Skills** - Skills associated with occupations
+- ✅ **Similar Occupations** - Find similar occupations
+- ✅ **Similar Skills** - Find similar skills
+- ✅ **SOC Model** - Direct SOC similarity queries
+- ✅ **Skill Model** - Direct skill similarity queries
+
+#### **📊 Occupation Benchmark API (6/6 endpoints)** - Premium Features
+- ✅ **API Metadata** - Benchmark API capabilities
+- ✅ **Available Areas** - Geographic areas available
+- ✅ **Available Metrics** - All available benchmark metrics
+- ✅ **Benchmark Data** - Salary and employment data
+- ✅ **SOC Dimension** - SOC code dimension data
+- ✅ **LOT Dimension** - LOT occupation dimension data
+
+#### **🛤️ Career Pathways API (3/3 endpoints)** - Premium Features
+- ✅ **API Metadata** - Career pathways capabilities
+- ✅ **Available Dimensions** - Pathway analysis dimensions
+- ✅ **Pathway Analysis** - Career transition analysis
+
+#### **💼 Job Postings API (3/3 endpoints)** - Premium Features
+- ✅ **Available Facets** - Job posting search facets
+- ✅ **Postings Summary** - Job posting trends and statistics
+- ✅ **Top Skills** - Most in-demand skills from job postings
+
+#### **🔄 Workflow Integration (2/2 endpoints)** - Custom Workflows
+- ✅ **Title → Skills Workflow** - Complete title normalization and skills extraction
+- ✅ **Simple Title Skills** - Streamlined title-to-skills pipeline
+
+### 🔧 **Core Functionality - All Working**
 - **🎯 Skills Extraction from Text** - High accuracy skill identification from job descriptions
-- **📊 Search & Discovery** - Fast, filtered search across both skills and titles taxonomies
+- **📊 Search & Discovery** - Fast, filtered search across skills, titles, and job postings
 - **⚡ Bulk Operations** - Efficient processing of multiple items in single requests
 - **🔄 Version Management** - Uses "latest" keyword with backward compatibility
-- **🔐 OAuth2 Authentication** - Secure authentication with Lightcast APIs
+- **🔐 OAuth2 Authentication** - Secure authentication with dynamic scope switching
+- **🔗 Related & Similar Skills** - Find skills relationships via multiple APIs
+- **💼 Job Market Data** - Real-time job posting analysis and trends
+- **📊 Benchmarks & Analytics** - Salary and employment data access
+- **🛤️ Career Pathways** - Career transition analysis and recommendations
 
-### ⚠️ **Limited/Premium Features**
-- ❌ **Title Normalization** - Requires premium authentication scope
-- ❌ **Skills Categories** - Endpoint not available in current API version
-- ❌ **Related Skills** - Endpoint pattern differs from documentation
-- ❌ **Title Hierarchy** - Endpoint pattern differs from documentation
+### ✅ **Premium Features - All Working**
+- ✅ **Title Normalization** - Working with premium authentication scope
+- ✅ **Skills Classification** - Working via Classification API
+- ✅ **Related Skills** - Working with corrected POST endpoint
+- ✅ **Similarity Analysis** - Full access to similarity models
+- ✅ **Job Market Analytics** - Real-time posting data and insights
+- ✅ **Occupation Benchmarks** - Comprehensive salary and employment data
 
-### 🛠️ **MCP Tools Available (69 total tools across 9 categories)**
+### 🛠️ **MCP Tools Available (23 core tools across 7 categories)**
 
-#### **Skills Tools (10 tools)** - ✅ Fully Working
-- `search_skills` - Search skills with advanced filters (type, category, subcategory)
-- `get_skill_details` - Get detailed skill information by ID
-- `get_multiple_skills` - Get details for multiple skills at once
-- `get_related_skills` - Find skills related to a specific skill
-- `get_skill_types` - Get all available skill types
-- `extract_skills_from_text` - Extract skills with custom confidence threshold
-- `extract_skills_simple` - Extract skills with default settings
-- `get_skills_metadata` - General skills taxonomy metadata
-- `get_skills_version_metadata` - Comprehensive API version information
+#### **Skills Tools (7 tools)**
+API Docs: https://docs.lightcast.dev/apis/skills
+
 - `bulk_retrieve_skills` - Efficient bulk skill retrieval
+- `extract_skills_from_text` - Extract skills with custom confidence threshold
+- `find_similar_skills` - Find similar skills via Similarity API
+- `get_skill_details` - Get detailed skill information by ID
+- `get_skills_metadata` - General skills taxonomy metadata
+- `get_related_skills` - Find skills related to a specific skill (now working with POST endpoint)
+- `search_skills` - Search skills with advanced filters (type, category, subcategory)
 
-#### **Titles Tools (8 tools)** - ✅ Mostly Working
-- `search_job_titles` - Search job titles in Lightcast database
-- `get_job_title_details` - Get detailed title information by ID
-- `normalize_job_title` - ⚠️ Normalize raw job titles (requires premium scope)
-- `get_title_hierarchy` - Get hierarchical structure for titles
-- `get_titles_metadata` - General titles taxonomy metadata
-- `get_titles_version_metadata` - Comprehensive API version information
-- `get_titles_general_metadata` - Latest version and attribution info
+#### **Titles Tools (4 tools)**
+API Docs: https://docs.lightcast.dev/apis/titles
+
 - `bulk_retrieve_titles` - Efficient bulk title retrieval
+- `get_job_title_details` - Get detailed title information by ID
+- `normalize_job_title` - Normalize raw job titles
+- `search_job_titles` - Search job titles in Lightcast database
 
-#### **Unified Skills Tools (3 tools)** - ✅ Advanced Workflows
-- `normalize_title_and_extract_skills` - Complete unified workflow with multiple data sources
-- `bulk_normalize_titles_and_extract_skills` - Process multiple titles efficiently
-- `compare_title_skills` - Compare skills between two job titles with similarity analysis
+#### **Job Postings Tools (3 tools)**
+API Docs: https://docs.lightcast.dev/apis/job-postings
 
-#### **Workflow Tools (3 tools)** - ✅ Combined Operations
-- `normalize_title_and_get_skills` - Full title normalization + skills workflow
-- `get_title_skills_simple` - Simplified title-to-skills workflow
-- `analyze_job_posting_skills` - Comprehensive job posting analysis
-
-#### **Classification Tools (9 tools)** - 🔄 Varying Availability
-- `map_concepts_to_occupations` - Map job concepts to SOC occupations
-- `normalize_job_title` - Normalize titles using classification API
-- `extract_skills_from_description` - Extract skills from job descriptions
-- `classify_occupation_level` - Classify occupation by level (entry/mid/senior)
-- `get_occupation_hierarchy` - Get SOC code hierarchy
-- `search_occupations` - Search occupations by query
-- `validate_soc_code` - Validate and get SOC code details
-- `get_soc_metadata` - Standard Occupational Classification metadata
-- `get_classification_metadata` - Classification API metadata
-
-#### **Similarity Tools (11 tools)** - 🔄 API Dependent
-- `find_similar_occupations` - Find occupations similar to given one
-- `find_similar_skills` - Find skills similar to given skill
-- `compare_occupations` - Compare two occupations for similarity
-- `compare_skills` - Compare two skills for similarity
-- `get_occupation_skills` - Get skills associated with occupation
-- `get_skill_occupations` - Get occupations that use specific skill
-- `rank_skills_by_importance` - Rank skills by importance for occupation
-- `find_skill_gaps` - Identify skill gaps between roles
-- `get_career_transitions` - Find career transition paths
-- `analyze_skill_trends` - Analyze skill demand trends
-- `get_similarity_metadata` - Similarity API metadata
-
-#### **Occupation Benchmark Tools (8 tools)** - 🔄 Premium Features
-- `get_occupation_salary_data` - Salary benchmarks by occupation
-- `get_regional_salary_data` - Regional salary information
-- `get_employment_projections` - Employment growth projections
-- `get_skills_demand_data` - Skills demand and growth data
-- `compare_occupation_salaries` - Compare salaries across occupations
-- `get_industry_benchmarks` - Industry-specific benchmarks
-- `get_demographic_data` - Workforce demographic information
-- `get_benchmark_metadata` - Benchmark API metadata
-
-#### **Career Pathways Tools (8 tools)** - 🔄 Advanced Analysis
-- `get_career_pathways` - Discover career progression paths
-- `analyze_career_transitions` - Analyze transition feasibility
-- `get_pathway_skills` - Skills needed for career transitions
-- `find_bridge_skills` - Skills that enable career moves
-- `get_promotion_paths` - Internal promotion pathways
-- `analyze_pathway_difficulty` - Assess transition difficulty
-- `get_pathway_timeline` - Estimated transition timelines
-- `get_pathways_metadata` - Career pathways API metadata
-
-#### **Job Postings Tools (9 tools)** - 🔄 Market Data
+- `get_job_posting_details` - Get detailed job posting information
+- `get_posting_statistics` - Job posting trends and analytics
 - `search_job_postings` - Search real-time job market data
-- `get_posting_trends` - Job posting trends and analytics
-- `analyze_skill_demand` - Real-time skills demand analysis
-- `get_salary_insights` - Salary data from job postings
-- `get_location_insights` - Geographic job market data
-- `get_company_insights` - Company hiring patterns
-- `track_job_requirements` - Track evolving job requirements
-- `get_market_competition` - Job market competition analysis
-- `get_postings_metadata` - Job postings API metadata
+
+#### **Classification Tools (1 tool)**
+API Docs: https://docs.lightcast.dev/apis/classification
+
+- `get_classification_metadata` - Classification API capabilities and metadata
+
+#### **Occupation Benchmark Tools (2 tools)**
+API Docs: https://docs.lightcast.dev/apis/occupation-benchmark
+
+- `get_benchmark_metadata` - Benchmark API capabilities and metadata
+- `get_occupation_benchmark` - Salary and employment benchmarks by occupation
+
+#### **Similarity Tools (3 tools)**
+API Docs: https://docs.lightcast.dev/apis/similarity
+
+- `get_similarity_metadata` - Similarity API capabilities and metadata
+- `get_pathways_metadata` - Career pathways API capabilities and metadata
+
+
+#### **Unified Workflows (4 tools)** - ✅ Complete Pipelines
+- `analyze_job_posting_skills` - Comprehensive job posting analysis
+- `normalize_title_and_get_skills` - Complete title→skills workflow
+- `normalize_title_and_extract_skills` - Alternative classification-based extraction
+
 
 ## 🛠️ Installation
 
@@ -137,7 +149,7 @@ A production-ready Model Context Protocol (MCP) server that provides seamless in
 
 - Python 3.12+ (required for uv-dynamic-versioning)
 - [uv](https://docs.astral.sh/uv/) package manager (recommended) or pip
-- Lightcast API credentials (Client ID and Secret with `emsi_open` scope)
+- Lightcast API credentials (Client ID and Secret with `emsi_open` scope). You can request free API access [here](https://lightcast.io/open-skills/access) which will give you access to the skills and titles taxonomies (subset of only the Skills and Titles APIs).
 
 ### 🚀 Quick Start with uvx (Recommended)
 
@@ -230,7 +242,7 @@ MASK_ERROR_DETAILS=true
 
 To use this server, you need:
 
-1. 📝 A [Lightcast API account](https://docs.lightcast.dev/contact)
+1. 📝 A [Lightcast API account](https://lightcast.io/open-skills/access)
 2. 🔑 Client ID and Client Secret for OAuth2 authentication
 3. 🎯 Access to the following Lightcast APIs:
    - Titles API - Job title search and normalization
@@ -238,7 +250,6 @@ To use this server, you need:
    - Classification API - Occupation code mapping
    - Similarity API - Skills and occupation relationships
 
-Contact [Lightcast](https://docs.lightcast.dev/contact) for API access and credentials.
 
 ## 🎯 Usage
 
@@ -704,48 +715,6 @@ search_skills("python", version="9.32")
 - Titles API: `5.47` with 73,993 titles
 - Both APIs use `"latest"` keyword for automatic version management
 
-## 📈 Current Limitations & Future Enhancements
-
-### ⚠️ **Known Limitations (v0.2.0)**
-
-#### **Authentication Scope Limitations**
-- **Title Normalization**: Requires premium authentication scope (currently 401 Unauthorized)
-- **Skills Categories**: Endpoint not available in current API tier
-- **Related Skills**: Endpoint pattern differs from documentation
-
-#### **Endpoint Coverage**
-- **61% Coverage**: 11 out of 18 planned endpoints working
-- **Core Functionality**: ✅ All essential features (search, extraction, bulk ops) working
-- **Premium Features**: ❌ Some advanced features require paid Lightcast tiers
-
-### 🚀 **Planned Enhancements**
-
-#### **Additional Lightcast APIs** 
-- **Classification API**: Map concepts to occupation codes (O*NET SOC)
-- **Similarity API**: Find similar occupations and skills
-- **Occupation Benchmark API**: Industry benchmarking and compensation data
-- **Career Pathways API**: Career progression and pathway analysis
-- **Job Postings API**: Real-time job market data and trends
-
-#### **Feature Improvements**
-- **Premium Authentication**: Support for advanced Lightcast scopes
-- **Enhanced Error Handling**: Better handling of rate limits and API errors
-- **Caching Layer**: Response caching for improved performance
-- **Additional Export Formats**: CSV, JSON, XML output options
-
-### 📊 **Production Readiness**
-
-✅ **Ready for Production Use:**
-- Skills extraction from job descriptions
-- Skills and titles search functionality
-- Bulk data retrieval operations
-- API version management and metadata
-
-⚠️ **Requires Premium Lightcast Access:**
-- Job title normalization workflows
-- Skills categorization features
-- Advanced relationship mapping
-
 ## Contributing
 
 1. Fork the repository
@@ -764,7 +733,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Lightcast API Documentation](https://docs.lightcast.dev/) - Official Lightcast API reference
 - [FastMCP Documentation](https://gofastmcp.com/) - FastMCP framework documentation  
 - [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
-- [Testing Summary](TESTING_SUMMARY.md) - Comprehensive endpoint testing results
 
 ### **Project Resources**
 - [PyPI Package](https://pypi.org/project/mcp-lightcast/) - Official Python package
@@ -778,6 +746,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### **Current Status**
 - **Version**: 0.2.0 (Production Ready)
-- **API Coverage**: 11/18 endpoints (61%)
+- **API Coverage**: 43/43 endpoints (100%)
+- **MCP Tools**: 23 core tools (streamlined)
+- **Premium Features**: All working with user credentials
 - **Python**: 3.12+ required
 - **License**: MIT

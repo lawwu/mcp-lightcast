@@ -460,37 +460,6 @@ class JobPostingsAPIClient(BaseLightcastClient):
         )
         return response.get("data", {})
 
-    async def extract_skills_from_posting(
-        self,
-        job_description: str,
-        confidence_threshold: float = 0.7,
-        include_soft_skills: bool = True,
-        version: str = "latest"
-    ) -> list[dict[str, Any]]:
-        """
-        Extract skills from a job posting description.
-        
-        Args:
-            job_description: Job posting description text
-            confidence_threshold: Minimum confidence for skill extraction
-            include_soft_skills: Include soft skills in extraction
-            version: API version to use
-            
-        Returns:
-            List of extracted skills with confidence scores
-        """
-        data = {
-            "description": job_description,
-            "confidence_threshold": confidence_threshold,
-            "include_soft_skills": include_soft_skills
-        }
-
-        response = await self.post(
-            f"posting/versions/{version}/extract/skills",
-            data=data,
-            version=version
-        )
-        return response.get("data", [])
 
     async def get_postings_metadata(
         self,
