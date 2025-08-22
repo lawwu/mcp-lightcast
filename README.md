@@ -72,7 +72,7 @@ A production-ready Model Context Protocol (MCP) server that provides seamless in
 - ✅ **Title → Skills Workflow** - Complete title normalization and skills extraction
 - ✅ **Simple Title Skills** - Streamlined title-to-skills pipeline
 
-### 🔧 **Core Functionality - All Working**
+### 🔧 **Core Functionality
 - **🎯 Skills Extraction from Text** - High accuracy skill identification from job descriptions
 - **📊 Search & Discovery** - Fast, filtered search across skills, titles, and job postings
 - **⚡ Bulk Operations** - Efficient processing of multiple items in single requests
@@ -82,14 +82,6 @@ A production-ready Model Context Protocol (MCP) server that provides seamless in
 - **💼 Job Market Data** - Real-time job posting analysis and trends
 - **📊 Benchmarks & Analytics** - Salary and employment data access
 - **🛤️ Career Pathways** - Career transition analysis and recommendations
-
-### ✅ **Premium Features - All Working**
-- ✅ **Title Normalization** - Working with premium authentication scope
-- ✅ **Skills Classification** - Working via Classification API
-- ✅ **Related Skills** - Working with corrected POST endpoint
-- ✅ **Similarity Analysis** - Full access to similarity models
-- ✅ **Job Market Analytics** - Real-time posting data and insights
-- ✅ **Occupation Benchmarks** - Comprehensive salary and employment data
 
 ### 🛠️ **MCP Tools Available (23 core tools across 7 categories)**
 
@@ -137,7 +129,7 @@ API Docs: https://docs.lightcast.dev/apis/similarity
 - `get_pathways_metadata` - Career pathways API capabilities and metadata
 
 
-#### **Unified Workflows (4 tools)** - ✅ Complete Pipelines
+#### **Unified Workflows (4 tools)**
 - `analyze_job_posting_skills` - Comprehensive job posting analysis
 - `normalize_title_and_get_skills` - Complete title→skills workflow
 - `normalize_title_and_extract_skills` - Alternative classification-based extraction
