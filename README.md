@@ -42,26 +42,94 @@ A production-ready Model Context Protocol (MCP) server that provides seamless in
 - ❌ **Related Skills** - Endpoint pattern differs from documentation
 - ❌ **Title Hierarchy** - Endpoint pattern differs from documentation
 
-### 🛠️ **MCP Tools Available**
+### 🛠️ **MCP Tools Available (69 total tools across 9 categories)**
 
-#### **Skills Tools**
-- `search_skills` - Search skills with advanced filters
-- `get_skill_details` - Get detailed skill information
+#### **Skills Tools (10 tools)** - ✅ Fully Working
+- `search_skills` - Search skills with advanced filters (type, category, subcategory)
+- `get_skill_details` - Get detailed skill information by ID
+- `get_multiple_skills` - Get details for multiple skills at once
+- `get_related_skills` - Find skills related to a specific skill
+- `get_skill_types` - Get all available skill types
 - `extract_skills_from_text` - Extract skills with custom confidence threshold
 - `extract_skills_simple` - Extract skills with default settings
+- `get_skills_metadata` - General skills taxonomy metadata
+- `get_skills_version_metadata` - Comprehensive API version information
 - `bulk_retrieve_skills` - Efficient bulk skill retrieval
-- `get_skills_version_metadata` - API version information
 
-#### **Titles Tools**
-- `search_job_titles` - Search job titles
-- `get_job_title_details` - Get detailed title information
+#### **Titles Tools (8 tools)** - ✅ Mostly Working
+- `search_job_titles` - Search job titles in Lightcast database
+- `get_job_title_details` - Get detailed title information by ID
+- `normalize_job_title` - ⚠️ Normalize raw job titles (requires premium scope)
+- `get_title_hierarchy` - Get hierarchical structure for titles
+- `get_titles_metadata` - General titles taxonomy metadata
+- `get_titles_version_metadata` - Comprehensive API version information
+- `get_titles_general_metadata` - Latest version and attribution info
 - `bulk_retrieve_titles` - Efficient bulk title retrieval
-- `get_titles_version_metadata` - API version information
-- `get_titles_general_metadata` - General taxonomy information
 
-#### **Combined Workflow Tools**
-- `normalize_title_and_get_skills` - Complete workflow (where normalization is available)
-- `analyze_job_posting_skills` - Comprehensive job posting analysis using skills extraction
+#### **Unified Skills Tools (3 tools)** - ✅ Advanced Workflows
+- `normalize_title_and_extract_skills` - Complete unified workflow with multiple data sources
+- `bulk_normalize_titles_and_extract_skills` - Process multiple titles efficiently
+- `compare_title_skills` - Compare skills between two job titles with similarity analysis
+
+#### **Workflow Tools (3 tools)** - ✅ Combined Operations
+- `normalize_title_and_get_skills` - Full title normalization + skills workflow
+- `get_title_skills_simple` - Simplified title-to-skills workflow
+- `analyze_job_posting_skills` - Comprehensive job posting analysis
+
+#### **Classification Tools (9 tools)** - 🔄 Varying Availability
+- `map_concepts_to_occupations` - Map job concepts to SOC occupations
+- `normalize_job_title` - Normalize titles using classification API
+- `extract_skills_from_description` - Extract skills from job descriptions
+- `classify_occupation_level` - Classify occupation by level (entry/mid/senior)
+- `get_occupation_hierarchy` - Get SOC code hierarchy
+- `search_occupations` - Search occupations by query
+- `validate_soc_code` - Validate and get SOC code details
+- `get_soc_metadata` - Standard Occupational Classification metadata
+- `get_classification_metadata` - Classification API metadata
+
+#### **Similarity Tools (11 tools)** - 🔄 API Dependent
+- `find_similar_occupations` - Find occupations similar to given one
+- `find_similar_skills` - Find skills similar to given skill
+- `compare_occupations` - Compare two occupations for similarity
+- `compare_skills` - Compare two skills for similarity
+- `get_occupation_skills` - Get skills associated with occupation
+- `get_skill_occupations` - Get occupations that use specific skill
+- `rank_skills_by_importance` - Rank skills by importance for occupation
+- `find_skill_gaps` - Identify skill gaps between roles
+- `get_career_transitions` - Find career transition paths
+- `analyze_skill_trends` - Analyze skill demand trends
+- `get_similarity_metadata` - Similarity API metadata
+
+#### **Occupation Benchmark Tools (8 tools)** - 🔄 Premium Features
+- `get_occupation_salary_data` - Salary benchmarks by occupation
+- `get_regional_salary_data` - Regional salary information
+- `get_employment_projections` - Employment growth projections
+- `get_skills_demand_data` - Skills demand and growth data
+- `compare_occupation_salaries` - Compare salaries across occupations
+- `get_industry_benchmarks` - Industry-specific benchmarks
+- `get_demographic_data` - Workforce demographic information
+- `get_benchmark_metadata` - Benchmark API metadata
+
+#### **Career Pathways Tools (8 tools)** - 🔄 Advanced Analysis
+- `get_career_pathways` - Discover career progression paths
+- `analyze_career_transitions` - Analyze transition feasibility
+- `get_pathway_skills` - Skills needed for career transitions
+- `find_bridge_skills` - Skills that enable career moves
+- `get_promotion_paths` - Internal promotion pathways
+- `analyze_pathway_difficulty` - Assess transition difficulty
+- `get_pathway_timeline` - Estimated transition timelines
+- `get_pathways_metadata` - Career pathways API metadata
+
+#### **Job Postings Tools (9 tools)** - 🔄 Market Data
+- `search_job_postings` - Search real-time job market data
+- `get_posting_trends` - Job posting trends and analytics
+- `analyze_skill_demand` - Real-time skills demand analysis
+- `get_salary_insights` - Salary data from job postings
+- `get_location_insights` - Geographic job market data
+- `get_company_insights` - Company hiring patterns
+- `track_job_requirements` - Track evolving job requirements
+- `get_market_competition` - Job market competition analysis
+- `get_postings_metadata` - Job postings API metadata
 
 ## 🛠️ Installation
 
@@ -294,7 +362,7 @@ make claude-config
 }
 ```
 
-### 🛠️ Available MCP Tools
+### 🔧 Detailed Tool Usage Examples
 
 #### **🎯 Skills Tools**
 
