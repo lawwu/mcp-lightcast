@@ -165,18 +165,28 @@ class SimilarityAPIClient(BaseLightcastClient):
         similarity_threshold: float = 0.5,
         version: str = "latest"
     ) -> list[SimilarityResult]:
-        """Find occupations similar to a given occupation."""
-        params = {
-            "limit": limit,
-            "similarity_threshold": similarity_threshold
+        """Find occupations similar to a given occupation using SOC model."""
+        data = {
+            "input": occupation_id,
+            "limit": limit
         }
 
-        response = await self.get(
-            f"versions/{version}/occupations/{occupation_id}/similar",
-            params=params,
-            version=version
+        response = await self._make_request(
+            "POST",
+            "models/soc",
+            data=data
         )
-        return [SimilarityResult(**item) for item in response.get("data", [])]
+        
+        # Convert response format to SimilarityResult
+        results = []
+        for item in response.get("data", []):
+            results.append(SimilarityResult(
+                id=item.get("id", ""),
+                name=item.get("title", item.get("name", "")),
+                similarity_score=item.get("score", item.get("similarity", 0.0)),
+                type="occupation"
+            ))
+        return results
 
     async def get_similar_skills(
         self,
@@ -185,18 +195,28 @@ class SimilarityAPIClient(BaseLightcastClient):
         similarity_threshold: float = 0.5,
         version: str = "latest"
     ) -> list[SimilarityResult]:
-        """Find skills similar to a given skill."""
-        params = {
-            "limit": limit,
-            "similarity_threshold": similarity_threshold
+        """Find skills similar to a given skill using skill model."""
+        data = {
+            "input": skill_id,
+            "limit": limit
         }
 
-        response = await self.get(
-            f"versions/{version}/skills/{skill_id}/similar",
-            params=params,
-            version=version
+        response = await self._make_request(
+            "POST",
+            "models/skill",
+            data=data
         )
-        return [SimilarityResult(**item) for item in response.get("data", [])]
+        
+        # Convert response format to SimilarityResult
+        results = []
+        for item in response.get("data", []):
+            results.append(SimilarityResult(
+                id=item.get("id", ""),
+                name=item.get("title", item.get("name", "")),
+                similarity_score=item.get("score", item.get("similarity", 0.0)),
+                type="skill"
+            ))
+        return results
 
     async def get_occupation_skills(
         self,
@@ -205,23 +225,25 @@ class SimilarityAPIClient(BaseLightcastClient):
         skill_type: str | None = None,
         version: str = "latest"
     ) -> OccupationSkillMapping:
-        """Get skills associated with an occupation."""
-        params = {"limit": limit}
-        if skill_type:
-            params["skill_type"] = skill_type
+        """Get skills associated with an occupation using SOC-skill model."""
+        data = {
+            "input": occupation_id,
+            "limit": limit
+        }
 
-        response = await self.get(
-            f"versions/{version}/occupations/{occupation_id}/skills",
-            params=params,
-            version=version
+        response = await self._make_request(
+            "POST",
+            "models/soc-skill",
+            data=data
         )
 
-        data = response.get("data", {})
+        # Convert response format to OccupationSkillMapping
+        skills_data = response.get("data", [])
         return OccupationSkillMapping(
             occupation_id=occupation_id,
-            occupation_name=data.get("occupation_name", ""),
-            skills=data.get("skills", []),
-            total_skills=data.get("total_skills", 0)
+            occupation_name=f"Occupation {occupation_id}",  # API doesn't return occupation name in this endpoint
+            skills=skills_data,
+            total_skills=len(skills_data)
         )
 
     async def find_occupations_by_skills(
