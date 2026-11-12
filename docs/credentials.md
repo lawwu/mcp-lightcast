@@ -1,7 +1,7 @@
 # Credential providers
 
-!!! note "Unreleased"
-    These features are available in this checkout and are not included in the published v0.3.1 package or image. Run the examples with `uv run` after `uv sync --all-groups --frozen`, or build a Docker image from this checkout.
+!!! note "Available in v0.4.0"
+    Install the [published package](getting-started.md) or use the `ghcr.io/lawwu/mcp-lightcast:0.4.0` image. Earlier releases use a single environment-configured account.
 
 Choose how the server obtains Lightcast credentials. Local installations keep their existing configuration. HTTP callers can opt into their own credentials, and deployments can supply an asynchronous provider that retrieves an authorized credential from a secret store.
 
@@ -22,7 +22,8 @@ LIGHTCAST_CLIENT_SECRET=your-client-secret
 ```
 
 ```bash
-uv run mcp-lightcast --env-file /absolute/path/to/lightcast.env --transport stdio
+uvx --python 3.14 mcp-lightcast@0.4.0 \
+  --env-file /absolute/path/to/lightcast.env --transport stdio
 ```
 
 Environment mode ignores the Lightcast credential headers. An HTTP caller cannot override the configured account in this mode. `--validate-config` still validates the environment account's default OAuth scope.
@@ -32,7 +33,7 @@ Environment mode ignores the Lightcast credential headers. An HTTP caller cannot
 Set the mode in the server's environment. No server-side Lightcast credential pair is required:
 
 ```bash
-LIGHTCAST_CREDENTIAL_MODE=headers uv run mcp-lightcast \
+LIGHTCAST_CREDENTIAL_MODE=headers uvx --python 3.14 mcp-lightcast@0.4.0 \
   --transport streamable-http --host 127.0.0.1 --port 3000
 ```
 

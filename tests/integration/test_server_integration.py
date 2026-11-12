@@ -22,7 +22,7 @@ async def test_catalog_and_resources():
     assert len(tools) == 37
     assert len(resources) == 2
     assert all(t.annotations.read_only_hint for t in tools)
-    assert json.loads(info[0].text)["version"] == "0.3.1"
+    assert json.loads(info[0].text)["version"] == "0.4.0"
 
 
 @pytest.mark.parametrize(

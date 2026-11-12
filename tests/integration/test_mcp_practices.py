@@ -16,7 +16,7 @@ async def test_both_protocol_eras_and_stable_catalog(mode, version):
         first = await client.list_tools()
         second = await client.list_tools()
         assert client.protocol_version == version
-        assert client.server_info.version == "0.3.1"
+        assert client.server_info.version == "0.4.0"
         assert "Core LMI" in client.instructions
     assert [t.name for t in first] == [t.name for t in second]
     assert len(first) == 37
