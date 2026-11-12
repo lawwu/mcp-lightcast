@@ -22,3 +22,9 @@ The old unregistered speculative Python helpers for salary insights, occupation 
 The experimental `unified_skills` helper now delegates to the supported workflow; its old source-selection and hardcoded-mapping arguments are retired. It does not return simulated postings or benchmark data.
 
 Update clients to read `workflow_metadata.status` and preserve upstream `warnings`. A partial result is useful, but it does not mean every requested stage succeeded.
+
+## Core LMI and current MCP clients
+
+This branch adds five Core LMI tools and upgrades to FastMCP 4 / MCP SDK 2. The 2026-07-28 protocol and legacy 2025-11-25 clients are both tested. Tool names from the earlier refresh remain available. Python code consuming SDK objects should use snake_case attributes; the generated documentation now uses `mcp.list_tools()`.
+
+HTTP now rejects untrusted Host and Origin headers. Configure exact trusted hosts/origins for a reverse proxy; see [MCP practices](mcp-review.md). Strict argument validation also rejects previously coerced values such as a string supplied for an integer limit.

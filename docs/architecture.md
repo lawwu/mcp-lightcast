@@ -8,6 +8,7 @@ MCP client
       ├─ Skills / Titles
       ├─ Classification / Similarity
       ├─ Benchmarks / Career Pathways / US Job Postings
+      ├─ Core LMI · dataset discovery / typed queries / bounded result pages
       └─ Workflows · compose clients and report partial results
           └─ Shared HTTP transport
               ├─ Service-specific OAuth token cache
@@ -34,6 +35,8 @@ Scope is an argument to authentication, never a mutable global selector. Request
 HTTP clients are closed when a tool finishes. Rate spacing is shared across those short-lived clients within an event loop. Locks are not reused across event loops.
 
 ## Truthful results
+
+Core LMI resolves numeric releases through dataset metadata, uses the separate Agnitio root and scope, and applies a one-request-per-second rate. Its documented offset was ignored by the live service, so bounded prefix retrieval and local slicing prevent duplicate pages.
 
 Wrappers preserve upstream warnings for Similarity, Career Pathways, and Occupation Benchmark. A missing dataset is not converted to a zero-valued salary or fabricated employment figure.
 

@@ -4,13 +4,13 @@
 
 ```bash
 uv sync --all-groups --frozen
-uv run pytest
+FASTMCP_MCP_CAMELCASE_COMPAT=false uv run pytest
 uv run ruff check src tests
 uv run ruff format --check src tests
 uv run mypy src
 ```
 
-Tests use synthetic HTTP responses shaped around the current Lightcast contracts. They cover scope isolation, concurrent token refresh, version discovery, retry bounds, MCP input validation, real tool serialization, and partial workflow results. Unmocked network calls fail during offline tests. Local `.env` credentials are replaced with test values.
+Tests use synthetic HTTP responses shaped around the current Lightcast contracts. They cover scope isolation, concurrent token refresh, version discovery, retry bounds, MCP input validation, real tool serialization, partial workflow results, Core LMI pagination, structured output schemas, current/legacy protocol connections, and HTTP Origin/Host protection. Unmocked network calls fail during offline tests. Local `.env` credentials are replaced with test values.
 
 ## Live API checks
 
@@ -24,6 +24,7 @@ The broader diagnostic runner exercises operations through an actual in-process 
 
 ```bash
 uv run python -m mcp_lightcast.diagnostics --operations --output test-results/live.json
+uv run python -m mcp_lightcast.diagnostics --core-lmi --output test-results/core-lmi.json
 ```
 
 This consumes your account’s API quotas, including normalization and classifier requests. The report stores tool names, outcomes, version identifiers, and a timestamp. It does not store credentials, tokens, posting bodies, or raw licensed datasets. A nonzero exit means at least one operation failed or returned a partial workflow result.
@@ -37,7 +38,7 @@ uv run --group docs python scripts/docs.py build --strict
 uv run --group docs python scripts/docs.py serve --dev-addr 127.0.0.1:8000
 ```
 
-Open the local URL printed by MkDocs. Tool reference pages are regenerated from the registered server schemas during each build, without authenticating to Lightcast.
+Open the local URL printed by Zensical. Tool reference pages are regenerated from the registered server schemas during each build, without authenticating to Lightcast.
 
 ## Distribution checks
 

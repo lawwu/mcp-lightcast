@@ -4,7 +4,7 @@
 
 [Documentation](https://lawwu.github.io/mcp-lightcast/) · [Tool reference](https://lawwu.github.io/mcp-lightcast/reference/tools/) · [API review](docs/review.md)
 
-32 MCP tools for Skills, Titles, Classification, Similarity, Occupation Benchmark, Career Pathways, and US Job Postings. Built with Python 3.12+, FastMCP, and scope-specific OAuth authentication.
+37 MCP tools for Skills, Titles, Classification, Similarity, Occupation Benchmark, Career Pathways, US Job Postings, and Core LMI. Built with Python 3.12+, FastMCP 4, and scope-specific OAuth authentication.
 
 ## Quick start
 
@@ -49,7 +49,10 @@ For HTTP, run `uv run mcp-lightcast --transport streamable-http --port 3000` and
 | Classify and map occupations | `classify_occupation`, `list_taxonomy_mappings`, `map_taxonomy_concepts` |
 | Compare skills and careers | `query_similarity`, `get_career_next_steps`, `get_career_skill_gap` |
 | Investigate demand and pay | `search_job_postings`, `get_posting_statistics`, `get_posting_rankings`, `get_occupation_benchmark` |
+| Explore employment, wages, and education | `list_core_lmi_datasets`, `get_core_lmi_metadata`, `get_core_lmi_dimension`, `query_core_lmi` |
 | Combine APIs | `normalize_title_and_get_skills`, `analyze_job_posting_skills` |
+
+See [Core LMI examples](docs/core-lmi.md) for employment comparisons, custom regions, industry concentration, and education completions, and the [MCP practices review](docs/mcp-review.md) for the protocol upgrade.
 
 Use metadata tools to discover fields and supported versions. Workflows preserve IDs, provenance, warnings, and partial failures. They never invent benchmark or career results.
 
@@ -68,9 +71,10 @@ Explicit live checks:
 ```bash
 uv run pytest --live -m live
 uv run python -m mcp_lightcast.diagnostics --operations --output test-results/live.json
+uv run python -m mcp_lightcast.diagnostics --core-lmi --output test-results/core-lmi.json
 ```
 
-The second command consumes real API quotas. Its report contains only tool outcomes and version metadata.
+Both diagnostic commands consume real API quotas. Its report contains only tool outcomes and version metadata.
 
 ## Documentation deployment
 

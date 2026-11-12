@@ -105,3 +105,19 @@ def test_bad_segments(value):
 
 def test_identifiers_are_url_encoded():
     assert segment("a/b?x=y") == "a%2Fb%3Fx%3Dy"
+
+
+async def test_cancellation_propagates_without_retry(api_mock, monkeypatch):
+    import asyncio
+
+    calls = []
+    async with BaseLightcastClient("skills") as client:
+
+        async def cancel(**kwargs):
+            calls.append(kwargs)
+            raise asyncio.CancelledError()
+
+        monkeypatch.setattr(client.client, "request", cancel)
+        with pytest.raises(asyncio.CancelledError):
+            await client.get("meta")
+    assert len(calls) == 1

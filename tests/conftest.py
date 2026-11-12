@@ -41,6 +41,8 @@ def isolated_environment(monkeypatch, request):
         monkeypatch.setenv("LIGHTCAST_OAUTH_SCOPE", "emsi_open")
         monkeypatch.setenv("LIGHTCAST_API_SCOPES", "{}")
         monkeypatch.setenv("LIGHTCAST_REQUESTS_PER_SECOND", "100000")
+        monkeypatch.setenv("LIGHTCAST_CORE_LMI_URL", "https://agnitio.emsicloud.com")
+        monkeypatch.setenv("LIGHTCAST_CORE_LMI_REQUESTS_PER_SECOND", "100000")
 
         async def deny_network(*args, **kwargs):
             raise AssertionError("Unmocked network request in an offline test")

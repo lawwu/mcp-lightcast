@@ -32,8 +32,8 @@ Python 3.12+ · Local or HTTP · Open source
 </div>
 
 <div class="stats">
-<div><strong>32</strong><span>purposeful MCP tools</span></div>
-<div><strong>7</strong><span>Lightcast API families</span></div>
+<div><strong>37</strong><span>purposeful MCP tools</span></div>
+<div><strong>8</strong><span>Lightcast API families</span></div>
 <div><strong>1</strong><span>connection for your assistant</span></div>
 </div>
 
@@ -63,7 +63,7 @@ Map occupations, compare skills, and explore career transitions using Lightcast�
 
 ### Put demand in context
 
-Query US job postings and occupation benchmarks with native filters and explicit dataset warnings.
+Explore employment, earnings, education, US job postings, and occupation benchmarks with explicit dataset provenance.
 
 [Explore market tools →](tool-guide.md#labor-market-data)
 </div>

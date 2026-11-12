@@ -48,3 +48,5 @@ def test_explicit_http_transport(monkeypatch):
     )
     assert result.exit_code == 0
     assert calls[0]["host"] == "127.0.0.1" and calls[0]["port"] == 3001
+
+    assert calls[0]["host_origin_protection"] is True

@@ -2,9 +2,9 @@
 
 **Reviewed November 12, 2026 · Version 0.3.0**
 
-This review compared the implementation with Lightcast’s current reference and embedded OpenAPI definitions, then exercised the integration using real account credentials. The server exposes a focused subset of seven API families; it does not claim to implement every Lightcast endpoint.
+This review compared the implementation with Lightcast’s current reference and embedded OpenAPI definitions, then exercised the integration using real account credentials. The server exposes a focused subset of eight API families; it does not claim to implement every Lightcast endpoint.
 
-## Verified API access
+## Original seven-family verification
 
 The review account successfully authenticated to all seven families and completed representative data operations:
 
@@ -19,6 +19,14 @@ The review account successfully authenticated to all seven families and complete
 | US Job Postings | Metadata, totals, skill rankings, search, posting details |
 
 Metadata reported Skills **10.1**, Titles **5.64**, and classifier release **2026.11**. These are observed values, not hardcoded defaults. Access to a tested operation does not establish unlimited quota, access to every region, or every dataset. Benchmark and model warnings remain part of returned responses.
+
+## Core LMI and MCP follow-up
+
+The follow-up adds five Core LMI tools and tests actual data queries against three datasets on release 2026.4. **18 Core LMI checks passed**, including discovery, employment and earnings, distinct query pages, combined regions, location quotient, shift share, and education completions. The account catalog listed 52 datasets.
+
+Live requests exposed ignored native offsets and page-sized `totalRows` values; bounded prefix retrieval now produces distinct pages. Cost-of-living metadata was accessible, but the documented data-query forms returned HTTP 400. This limitation is recorded in the [Core LMI guide](core-lmi.md).
+
+The [MCP review](mcp-review.md) documents the upgrade to the 2026-07-28 protocol with legacy compatibility, strict arguments, actionable errors, and HTTP Origin/Host protection.
 
 ## Findings and repairs
 
@@ -58,6 +66,6 @@ These are the primary contracts used during the review:
 
 Offline tests assert HTTP paths and bodies, concurrency behavior, input constraints, error propagation, and actual MCP calls. The live runner checks operation availability using small requests through the MCP server. It does not compare all returned market data with independent ground truth or exercise every possible filter combination.
 
-The review completed **60 offline tests** and **32 live MCP tool checks**. An isolated Python 3.12 wheel installation also passed stdio and streamable HTTP handshakes, tool discovery, version reporting, and external environment-file loading. Browser checks covered search, light/dark themes, and a 390-pixel mobile layout.
+The updated suite completed **98 offline tests**, **32 existing live MCP tool checks**, and **18 Core LMI live checks**. Offline tests passed on Python 3.13 and 3.14. An isolated Python 3.12 wheel installation passed stdio and streamable HTTP connections with both the current and legacy protocols, 37-tool discovery, version reporting, and external environment-file loading. Browser checks covered the new Core LMI and MCP guides; the original site review also covered search, light/dark themes, and a 390-pixel mobile layout.
 
 The docs build uses Zensical, is strict, and generates the reference from registered tool schemas. See [testing](testing.md) for repeatable commands and [migration](migration.md) for breaking contract corrections.

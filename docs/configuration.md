@@ -10,10 +10,12 @@ The installed package and repository checkout use the same configuration. Values
 | `LIGHTCAST_CLIENT_SECRET` | Required | OAuth client secret |
 | `LIGHTCAST_OAUTH_SCOPE` | `emsi_open` | Scope for Skills and Titles; free-tier accounts may need `lightcast_open_free` |
 | `LIGHTCAST_OAUTH_URL` | `https://auth.emsicloud.com/connect/token` | Token endpoint |
-| `LIGHTCAST_BASE_URL` | `https://api.lightcast.io` | Root for all API families except Classification |
+| `LIGHTCAST_BASE_URL` | `https://api.lightcast.io` | Root for all API families except Classification and Core LMI |
 | `LIGHTCAST_CLASSIFICATION_URL` | `https://classification.emsicloud.com` | Classification root |
+| `LIGHTCAST_CORE_LMI_URL` | `https://agnitio.emsicloud.com` | Core LMI root |
+| `LIGHTCAST_CORE_LMI_REQUESTS_PER_SECOND` | `1` | Separate Core LMI request spacing |
 | `LIGHTCAST_API_SCOPES` | `{}` | JSON object overriding scopes by API family |
-| `LIGHTCAST_REQUESTS_PER_SECOND` | `5` | Per-service request rate within this process |
+| `LIGHTCAST_REQUESTS_PER_SECOND` | `5` | Per-service request rate within this process, except Core LMI |
 | `LIGHTCAST_TIMEOUT` | `30` | Request timeout in seconds |
 | `LIGHTCAST_MAX_RETRIES` | `2` | Retries for transient gateway failures and short `Retry-After` responses |
 
@@ -27,6 +29,7 @@ The installed package and repository checkout use the same configuration. Values
 | Occupation Benchmark | `occupation-benchmark` |
 | Career Pathways | `career-pathways` |
 | US Job Postings | `postings:us` |
+| Core LMI | `agnitio` |
 
 For an account assigned `lightcast_open` for Classification:
 
@@ -38,7 +41,7 @@ Tokens are cached separately for each requested scope. A successful token reques
 
 ## Server options
 
-`MCP_SERVER_NAME` defaults to `lightcast-mcp-server`. `MASK_ERROR_DETAILS=true` hides tool exception details from MCP clients. The CLI supports `--log-level`, `--quiet`, `--host`, `--port`, `--transport`, and `--validate-config`.
+`MCP_SERVER_NAME` defaults to `lightcast-mcp-server`. `MASK_ERROR_DETAILS=true` hides unexpected tool exception details; sanitized API and authentication errors remain actionable. The CLI supports `--log-level`, `--quiet`, `--host`, `--port`, `--transport`, and `--validate-config`.
 
 ## Versions that mean different things
 
@@ -48,6 +51,7 @@ Tokens are cached separately for each requested scope. A successful token reques
 | Titles `version` | Titles taxonomy version, or `latest` |
 | Classification `version` | Classifier release; `latest` is resolved through `/classifications` |
 | `lot_version` | LOT major version supported by the model, currently `6` or `7` |
+| Core LMI `version` | Dataset release; `latest` discovers the newest numeric release, independently of metric year |
 | JPA data | Discover available months and taxonomy versions through metadata |
 
 Combined workflows expose separate version parameters. Do not pass a Skills taxonomy version into a title or classifier request. For reproducible research, record metadata and pin compatible versions; classifier releases can expire.
@@ -57,3 +61,5 @@ Combined workflows expose separate version parameters. Do not pass a Skills taxo
 The client spaces requests across short-lived clients for each service. Limits are process-local; multiple server processes still share your account quota.
 
 A `401` refreshes only the token for the affected scope and retries once. `403` fails immediately. `502`, `503`, and `504` use bounded backoff. `429` is retried only when `Retry-After` is present and at most five seconds. Longer or unspecified delays produce a quota error with reset information for Python callers.
+
+The HTTP CLI enables Host/Origin protection. Trusted reverse-proxy hosts and browser origins can be supplied through `FASTMCP_HTTP_ALLOWED_HOSTS` and `FASTMCP_HTTP_ALLOWED_ORIGINS` as JSON arrays. See [MCP practices](mcp-review.md) before exposing the server to other users.

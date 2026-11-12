@@ -77,5 +77,9 @@ def main(
         return
     from .server import mcp
 
-    kwargs = {"host": host, "port": port} if transport == "streamable-http" else {}
+    kwargs = (
+        {"host": host, "port": port, "host_origin_protection": True}
+        if transport == "streamable-http"
+        else {}
+    )
     mcp.run(transport=transport, show_banner=not quiet, **kwargs)

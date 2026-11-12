@@ -10,7 +10,7 @@ from pathlib import Path
 def generate_reference():
     from mcp_lightcast.server import mcp
 
-    tools = asyncio.run(mcp.get_tools())
+    tools = asyncio.run(mcp.list_tools())
     lines = [
         "# MCP tool reference",
         "",
@@ -20,7 +20,8 @@ def generate_reference():
         "",
     ]
     groups = {}
-    for name, tool in tools.items():
+    for tool in tools:
+        name = tool.name
         category = sorted(tool.tags)[0] if tool.tags else "other"
         groups.setdefault(category, []).append((name, tool))
     for group, entries in sorted(groups.items()):
@@ -60,9 +61,12 @@ def generate_reference():
 
 if __name__ == "__main__":
     generate_reference()
-    raise SystemExit(
-        subprocess.call(
-            ["zensical", *(sys.argv[1:] or ["serve"])],
-            cwd=Path(__file__).resolve().parent.parent,
+    try:
+        raise SystemExit(
+            subprocess.call(
+                ["zensical", *(sys.argv[1:] or ["serve"])],
+                cwd=Path(__file__).resolve().parent.parent,
+            )
         )
-    )
+    except KeyboardInterrupt:
+        raise SystemExit(130) from None

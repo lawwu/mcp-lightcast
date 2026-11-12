@@ -14,12 +14,14 @@ nav:
       - Choosing a tool: tool-guide.md
   - Guides:
       - Recipes: recipes.md
+      - Core LMI examples: core-lmi.md
       - Testing: testing.md
       - Deployment: deployment.md
   - Reference:
       - MCP tools: reference/tools.md
       - Architecture: architecture.md
       - API compatibility review: review.md
+      - MCP practices: mcp-review.md
       - Migration to 0.3: migration.md
 theme:
   variant: classic
