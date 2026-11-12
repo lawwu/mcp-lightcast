@@ -23,6 +23,7 @@ nav:
       - API compatibility review: review.md
       - MCP practices: mcp-review.md
       - Migration to 0.3: migration.md
+      - Release 0.3.1: releases/0.3.1.md
       - Release 0.3.0: releases/0.3.0.md
 theme:
   variant: classic

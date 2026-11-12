@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-lightcast"
-version = "0.3.0"
+version = "0.3.1"
 # dynamic = ["version"]  # Disabled in favor of static version
 description = "MCP server for Lightcast API integration using FastMCP"
 readme = "README.md"

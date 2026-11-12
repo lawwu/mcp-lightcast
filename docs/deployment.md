@@ -32,7 +32,7 @@ Configure the PyPI project's GitHub trusted publisher for owner `lawwu`, reposit
 
 If publishing fails, fix the reported credential or service problem and rerun only failed jobs. Never move an already-pushed release tag or replace a PyPI version. Successful publishers are not repeated when rerunning failed jobs, and the GitHub release job can safely update its existing notes and assets.
 
-See the [0.3.0 release notes](releases/0.3.0.md) and [migration guide](migration.md).
+See the [0.3.1 release notes](releases/0.3.1.md) and [migration guide](migration.md).
 
 ## Dependency maintenance
 
@@ -67,9 +67,9 @@ For local HTTP access:
 uv run mcp-lightcast --transport streamable-http --host 127.0.0.1 --port 3000
 ```
 
-## HTTP health endpoint (unreleased)
+## HTTP health endpoint
 
-The source version adds `GET /health` and `HEAD /health` alongside `/mcp`. This endpoint is not in the published v0.3.0 package or image; build from the checkout until the next release.
+Available in **v0.3.1**, `GET /health` and `HEAD /health` run alongside `/mcp`. Upgrade older installations to use this endpoint.
 
 ```bash
 curl --fail http://127.0.0.1:3000/health
