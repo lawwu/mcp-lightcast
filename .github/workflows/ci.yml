@@ -4,8 +4,6 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
-  release:
-    types: [published]
 permissions:
   contents: read
 env:
@@ -45,52 +43,3 @@ jobs:
           persist-credentials: false
       - run: docker build -t mcp-lightcast:test .
       - run: docker run --rm mcp-lightcast:test --help
-
-  publish-docker:
-    name: Publish Docker Images
-    runs-on: ubuntu-latest
-    needs: [test, docker]
-    if: github.event_name == 'release' && github.event.action == 'published'
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - uses: actions/checkout@v7.0.1
-      with:
-        persist-credentials: false
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4.4.1
-      with:
-        cache-binary: false
-
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v4.8.0
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v6.2.0
-      with:
-        images: ghcr.io/${{ github.repository }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Build and push production image
-      uses: docker/build-push-action@v7.4.0
-      with:
-        context: .
-        file: ./Dockerfile
-        target: production
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}

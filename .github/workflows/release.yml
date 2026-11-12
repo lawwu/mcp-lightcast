@@ -14,6 +14,13 @@ on:
 permissions:
   contents: read
 
+env:
+  FASTMCP_MCP_CAMELCASE_COMPAT: "false"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build distribution
@@ -43,7 +50,17 @@ jobs:
       env:
         RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
       run: |
-        uv run python -c 'import os, tomllib; expected = os.environ["RELEASE_VERSION"].removeprefix("v"); actual = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]; assert actual == expected, (actual, expected)'
+        uv run python - <<'PY'
+        import os
+        from pathlib import Path
+        import tomllib
+
+        expected = os.environ["RELEASE_VERSION"].removeprefix("v")
+        actual = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+        assert actual == expected, (actual, expected)
+        notes = Path("docs/releases") / f"{actual}.md"
+        assert notes.is_file() and notes.read_text().strip(), f"Missing release notes: {notes}"
+        PY
 
     - name: Build documentation
       run: uv run --group docs python scripts/docs.py build --strict
@@ -123,15 +140,78 @@ jobs:
         repository-url: https://test.pypi.org/legacy/
         attestations: true
 
+  publish-docker:
+    name: Publish Docker Images
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v4.4.1
+      with:
+        cache-binary: false
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v6.2.0
+      with:
+        images: ghcr.io/${{ github.repository }}
+        flavor: latest=auto
+        tags: |
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build production image for testing
+      uses: docker/build-push-action@v7.4.0
+      with:
+        context: .
+        file: ./Dockerfile
+        target: production
+        load: true
+        tags: mcp-lightcast:release-test
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Check container entry point
+      run: docker run --rm mcp-lightcast:release-test --help
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v4.8.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push production image
+      uses: docker/build-push-action@v7.4.0
+      with:
+        context: .
+        file: ./Dockerfile
+        target: production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
   github-release:
     name: Create GitHub Release
-    needs: build
+    needs: [build, publish-pypi, publish-docker]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
 
     steps:
+    - uses: actions/checkout@v7.0.1
+      with:
+        persist-credentials: false
+
     - name: Download artifacts
       uses: actions/download-artifact@v8.0.2
       with:
@@ -142,7 +222,7 @@ jobs:
       id: version
       run: printf 'version=%s\n' "${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
-    - name: Create release with generated notes
+    - name: Create release with curated notes
       env:
         GH_TOKEN: ${{ github.token }}
         RELEASE_VERSION: ${{ steps.version.outputs.version }}
@@ -150,8 +230,11 @@ jobs:
         if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
           gh release upload "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.whl \
             --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --notes-file "docs/releases/$RELEASE_VERSION.md"
         else
           gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.whl \
-            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --notes-file "docs/releases/$RELEASE_VERSION.md" \
             --title "MCP Lightcast v$RELEASE_VERSION" --prerelease=false
         fi

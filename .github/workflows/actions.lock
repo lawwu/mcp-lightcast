@@ -10,10 +10,6 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-python@v7.1.0'
         - 'astral-sh/setup-uv@v10.3.3'
-        - 'docker/build-push-action@v7.4.0'
-        - 'docker/login-action@v4.8.0'
-        - 'docker/metadata-action@v6.2.0'
-        - 'docker/setup-buildx-action@v4.4.1'
     '.github/workflows/dependabot-automerge.yml':
         - 'dependabot/fetch-metadata@v3.1.0'
     '.github/workflows/docs.yml':
@@ -29,6 +25,10 @@ workflows:
         - 'actions/setup-python@v7.1.0'
         - 'actions/upload-artifact@v7.0.2'
         - 'astral-sh/setup-uv@v10.3.3'
+        - 'docker/build-push-action@v7.4.0'
+        - 'docker/login-action@v4.8.0'
+        - 'docker/metadata-action@v6.2.0'
+        - 'docker/setup-buildx-action@v4.4.1'
         - 'pypa/gh-action-pypi-publish@v1.14.3'
 dependencies:
     'actions/checkout@v7.0.1':

@@ -22,6 +22,18 @@ Forks should update `site_url`, `repo_url`, and package links. If a deployment w
 
 No Lightcast credentials are needed in GitHub Actions to build or deploy the docs. `.env` is excluded from Git, distributions, and Docker contexts.
 
+## Package and container releases
+
+The `Release` workflow in `.github/workflows/release.yml` runs from a pushed version tag such as `v0.3.0`. Before tagging, update the package version and lockfile, add `docs/releases/<version>.md`, and merge after the required PR checks pass. The workflow verifies that the tag matches the package version and that curated release notes exist, then runs offline tests, lint, type checks, a strict docs build, and distribution checks.
+
+After validation, the workflow publishes to PyPI using [trusted publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/) and builds, smoke-tests, and publishes the production image to GHCR. Stable releases receive full version, minor version, and `latest` tags, for example `0.3.0`, `0.3`, and `latest`. The GitHub release is created with the curated notes and wheel/source assets only after both publishers succeed. Docker publishing is in this same workflow because releases created using `GITHUB_TOKEN` cannot trigger a second release-event workflow.
+
+Configure the PyPI project's GitHub trusted publisher for owner `lawwu`, repository `mcp-lightcast`, workflow `release.yml`, and environment `pypi`. GHCR uses the job's `GITHUB_TOKEN` with `packages: write`; no registry password secret is needed. The container package must be public for anonymous pulls. A manual workflow run publishes only to TestPyPI and requires a separate trusted publisher there using environment `testpypi`.
+
+If publishing fails, fix the reported credential or service problem and rerun only failed jobs. Never move an already-pushed release tag or replace a PyPI version. Successful publishers are not repeated when rerunning failed jobs, and the GitHub release job can safely update its existing notes and assets.
+
+See the [0.3.0 release notes](releases/0.3.0.md) and [migration guide](migration.md).
+
 ## Dependency maintenance
 
 The `Dependabot auto-merge` workflow queues verified Dependabot patch and minor updates for squash merge. Python and GitHub Actions updates are grouped separately; major upgrades are excluded from those groups and require manual review. A group containing a major update is also ineligible because the metadata action reports the highest change in the group.
