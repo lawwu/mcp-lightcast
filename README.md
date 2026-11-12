@@ -296,6 +296,18 @@ make test-coverage
 make claude-config
 ```
 
+### GitHub Actions
+
+The workflows are locked: every action is pinned to an exact commit in
+`.github/workflows/actions.lock` (via [gh-actions-lock](https://github.com/github/gh-actions-lock)),
+and the `actions` workflow checks the lockfile and lints the workflows with
+[zizmor](https://docs.zizmor.sh/) on every pull request.
+
+- After changing a workflow, relock with `gh actions-lock` and commit the updated lockfile.
+- Lint locally with `uvx zizmor .github/`.
+- Keep comments off `uses:` lines: relocking rewrites those lines and drops trailing comments.
+- Dependabot proposes action updates weekly, grouped, after a 7-day cooldown.
+
 ### Claude Desktop Integration
 
 #### Using uv (Recommended)
