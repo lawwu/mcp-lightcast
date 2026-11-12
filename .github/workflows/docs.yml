@@ -1,0 +1,53 @@
+name: Documentation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'scripts/docs.py'
+      - 'mkdocs.yml'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: false
+          version: '0.13.7'
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+      - run: uv sync --frozen --no-dev --group docs
+      - run: uv run --frozen --no-dev --group docs python scripts/docs.py build --strict
+      - uses: actions/upload-pages-artifact@v3.0.1
+        with:
+          path: site
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5.0.0
+      - uses: actions/deploy-pages@v4.0.5
+        id: deployment

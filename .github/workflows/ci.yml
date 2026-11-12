@@ -1,181 +1,51 @@
-name: CI/CD Pipeline
-
+name: CI
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   release:
-    types: [ published ]
-
+    types: [published]
 permissions:
   contents: read
-
-env:
-  PYTHON_VERSION: '3.12'
-
 jobs:
   test:
-    name: Test Python ${{ matrix.python-version }}
+    name: Python ${{ matrix.python }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
-
+        python: ['3.12', '3.13', '3.14']
     steps:
-    - uses: actions/checkout@v7.0.1
-      with:
-        persist-credentials: false
-        fetch-depth: 0  # For dynamic versioning
-
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v10.3.3
-      with:
-        version: "0.13.7"
-        enable-cache: false
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7.1.0
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        uv sync --all-groups --frozen
-
-    - name: Lint with ruff
-      run: |
-        uv run ruff check src/ tests/
-        uv run ruff format --check src/ tests/
-
-    - name: Type check with mypy
-      run: |
-        uv run mypy src/
-
-    - name: Test with pytest
-      run: |
-        uv run pytest tests/ --cov=src --cov-report=xml --cov-report=term
-      env:
-        # Mock environment variables for testing
-        LIGHTCAST_CLIENT_ID: "test_client_id"
-        LIGHTCAST_CLIENT_SECRET: "test_client_secret"
-
-    - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.12'
-      uses: codecov/codecov-action@v7.1.1
-      with:
-        files: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-
-  test-integration:
-    name: Test Integration
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: false
+          version: '0.13.7'
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --frozen
+      - run: uv run --frozen ruff check src tests
+      - run: uv run --frozen ruff format --check src tests
+      - run: uv run --frozen mypy src
+      - run: uv run --frozen pytest --cov=src --cov-report=term-missing
+      - run: uv build
+      - run: uv run --frozen twine check dist/*
+  docker:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7.0.1
-      with:
-        persist-credentials: false
-
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v10.3.3
-      with:
-        version: "0.13.7"
-        enable-cache: false
-
-    - name: Set up Python
-      uses: actions/setup-python@v7.1.0
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-
-    - name: Install dependencies
-      run: uv sync --all-groups --frozen
-
-    - name: Run integration tests
-      run: |
-        uv run pytest tests/integration/ -v
-      env:
-        # Mock environment variables for testing
-        LIGHTCAST_CLIENT_ID: "test_client_id"
-        LIGHTCAST_CLIENT_SECRET: "test_client_secret"
-
-  docker-build:
-    name: Docker Build and Test
-    runs-on: ubuntu-latest
-    needs: [test, test-integration]
-
-    steps:
-    - uses: actions/checkout@v7.0.1
-      with:
-        persist-credentials: false
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4.4.1
-      with:
-        cache-binary: false
-
-    - name: Build production image
-      uses: docker/build-push-action@v7.4.0
-      with:
-        context: .
-        file: ./Dockerfile
-        target: production
-        tags: mcp-lightcast:test
-        load: true
-
-    - name: Test Docker image
-      run: |
-        # Test image can start and validate config
-        docker run --rm \
-          -e LIGHTCAST_CLIENT_ID=test_id \
-          -e LIGHTCAST_CLIENT_SECRET=test_secret \
-          mcp-lightcast:test --validate-config --quiet || echo "Expected to fail without real credentials"
-
-    - name: Build development image
-      uses: docker/build-push-action@v7.4.0
-      with:
-        context: .
-        file: ./Dockerfile.dev
-        target: development
-        tags: mcp-lightcast:dev-test
-        load: true
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v7.0.1
-      with:
-        persist-credentials: false
-
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v10.3.3
-      with:
-        version: "0.13.7"
-        enable-cache: false
-
-    - name: Set up Python
-      uses: actions/setup-python@v7.1.0
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-
-    - name: Install dependencies
-      run: uv sync --frozen
-
-    - name: Run safety check
-      run: |
-        uv add --dev safety
-        uv run safety check --json || true
-
-    - name: Run bandit security linter
-      run: |
-        uv add --dev bandit[toml]
-        uv run bandit -r src/ -f json || true
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - run: docker build -t mcp-lightcast:test .
+      - run: docker run --rm mcp-lightcast:test --help
 
   publish-docker:
     name: Publish Docker Images
     runs-on: ubuntu-latest
-    needs: [test, test-integration, docker-build]
+    needs: [test, docker]
     if: github.event_name == 'release' && github.event.action == 'published'
     permissions:
       contents: read
@@ -220,58 +90,3 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-
-  build-pypi:
-    name: Build PyPI distribution
-    runs-on: ubuntu-latest
-    needs: [test, test-integration, security-scan]
-    if: github.event_name == 'release' && github.event.action == 'published'
-    steps:
-    - uses: actions/checkout@v7.0.1
-      with:
-        persist-credentials: false
-        fetch-depth: 0  # For dynamic versioning
-
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v10.3.3
-      with:
-        version: "0.13.7"
-        enable-cache: false
-
-    - name: Set up Python
-      uses: actions/setup-python@v7.1.0
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-
-    - name: Build package
-      run: |
-        uv build
-
-    - name: Upload distribution
-      uses: actions/upload-artifact@v7.0.2
-      with:
-        name: pypi-dist
-        path: dist/
-        if-no-files-found: error
-
-  publish-pypi:
-    name: Publish to PyPI
-    runs-on: ubuntu-latest
-    needs: build-pypi
-    if: github.event_name == 'release' && github.event.action == 'published'
-    environment:
-      name: pypi
-      url: https://pypi.org/p/mcp-lightcast
-    permissions:
-      id-token: write
-    steps:
-    - name: Download distribution
-      uses: actions/download-artifact@v8.0.2
-      with:
-        name: pypi-dist
-        path: dist/
-
-    - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.14.3
-      with:
-        verbose: true

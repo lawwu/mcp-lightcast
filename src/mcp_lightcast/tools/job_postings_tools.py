@@ -1,75 +1,56 @@
-"""MCP tools for Lightcast Job Postings API."""
+"""US job-postings queries using native Lightcast filters."""
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
+from pydantic import Field
 
-from ..apis.job_postings import JobPostingsAPIClient
+from ..apis.job_postings import JobPostingsAPIClient, PostingFilters
+from .types import READ_ONLY, Limit, Text
 
 
-def register_job_postings_tools(mcp: FastMCP):
-    """Register core job postings-related MCP tools."""
-
-    @mcp.tool
+def register_job_postings_tools(mcp: FastMCP) -> None:
+    @mcp.tool(tags={"postings"}, annotations=READ_ONLY)
     async def search_job_postings(
-        query: str | None = None,
-        location: str | None = None,
-        occupation_ids: list[str] | None = None,
-        limit: int = 10,
-        version: str = "latest"
-    ) -> list[dict[str, Any]]:
-        """
-        Search job postings in real-time job market data.
-        
-        Args:
-            query: Search term for job postings (optional)
-            location: Geographic location filter (optional)
-            occupation_ids: List of occupation IDs to filter by (optional)
-            limit: Maximum number of results to return (default: 10)
-            version: API version to use (default: "latest")
-            
-        Returns:
-            List of job postings with their details
-        """
-        async with JobPostingsAPIClient() as client:
-            return await client.search_postings(query, location, occupation_ids, limit, version)
-
-    @mcp.tool
-    async def get_job_posting_details(
-        posting_id: str,
-        version: str = "latest"
+        filters: PostingFilters,
+        limit: Annotated[int, Field(ge=1, le=10)] = 10,
+        page: Annotated[int, Field(ge=1)] = 1,
+        fields: list[str] | None = None,
     ) -> dict[str, Any]:
-        """
-        Get detailed information about a specific job posting.
-        
-        Args:
-            posting_id: Job posting ID
-            version: API version to use (default: "latest")
-            
-        Returns:
-            Detailed job posting information
-        """
+        """Search US postings with native filters including required when (active or a start/end range), e.g. {"when": "active", "title": ["ET6850661D6AE5FA86"], "city_name": ["Seattle, WA"]}. Use metadata to discover filters; requires postings:us."""
         async with JobPostingsAPIClient() as client:
-            return await client.get_posting_details(posting_id, version)
+            return await client.search_postings(
+                filters.model_dump(exclude_unset=True), limit, page, fields
+            )
 
-    @mcp.tool
+    @mcp.tool(tags={"postings"}, annotations=READ_ONLY)
+    async def get_job_posting_details(posting_id: Text) -> dict[str, Any]:
+        """Retrieve a US posting by ID. Requires posting-detail permissions."""
+        async with JobPostingsAPIClient() as client:
+            return await client.get_posting_details(posting_id)
+
+    @mcp.tool(tags={"postings"}, annotations=READ_ONLY)
     async def get_posting_statistics(
-        occupation_ids: list[str] | None = None,
-        location: str | None = None,
-        time_period: str = "30d",
-        version: str = "latest"
+        filters: PostingFilters, metrics: list[str] | None = None
     ) -> dict[str, Any]:
-        """
-        Get job posting trends and analytics.
-        
-        Args:
-            occupation_ids: List of occupation IDs to analyze (optional)
-            location: Geographic location to analyze (optional)
-            time_period: Time period for analysis (default: "30d")
-            version: API version to use (default: "latest")
-            
-        Returns:
-            Job posting statistics and trends
-        """
+        """Get US posting totals; metrics default to unique_postings. filters.when is required. Discover filters and metrics in metadata."""
         async with JobPostingsAPIClient() as client:
-            return await client.get_postings_summary(occupation_ids, location, version)
+            return await client.get_postings_summary(
+                filters.model_dump(exclude_unset=True), metrics
+            )
+
+    @mcp.tool(tags={"postings"}, annotations=READ_ONLY)
+    async def get_posting_rankings(
+        facet: Text, filters: PostingFilters, limit: Limit = 10
+    ) -> dict[str, Any]:
+        """Rank a facet such as skills_name or company_name by unique US postings. filters.when is required."""
+        async with JobPostingsAPIClient() as client:
+            return await client.get_rankings(
+                facet, filters.model_dump(exclude_unset=True), limit
+            )
+
+    @mcp.tool(tags={"postings"}, annotations=READ_ONLY)
+    async def get_postings_metadata() -> dict[str, Any]:
+        """Discover accessible US posting fields, filters, metrics, and available months."""
+        async with JobPostingsAPIClient() as client:
+            return await client.get_postings_metadata()

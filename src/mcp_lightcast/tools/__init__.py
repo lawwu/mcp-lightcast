@@ -13,7 +13,7 @@ __all__ = [
     "register_titles_tools",
     "register_job_postings_tools",
     "register_classification_tools",
-    "register_occupation_benchmark_tools", 
+    "register_occupation_benchmark_tools",
     "register_similarity_tools",
-    "register_workflow_tools"
+    "register_workflow_tools",
 ]

@@ -1,197 +1,81 @@
-"""MCP tools for Lightcast Skills API."""
+"""MCP tools for skills lookup and text extraction."""
 
 from typing import Any
 
 from fastmcp import FastMCP
 
-from ..apis.skills import SkillsAPIClient
 from ..apis.similarity import SimilarityAPIClient
+from ..apis.skills import SkillsAPIClient
+from .types import READ_ONLY, Confidence, IDs, Limit, Text
 
 
-def register_skills_tools(mcp: FastMCP):
-    """Register core skills-related MCP tools."""
-
-    @mcp.tool
+def register_skills_tools(mcp: FastMCP) -> None:
+    @mcp.tool(tags={"skills"}, annotations=READ_ONLY)
     async def search_skills(
-        query: str,
-        limit: int = 10,
+        query: Text,
+        limit: Limit = 10,
         skill_type: str | None = None,
-        category: str | None = None,
-        subcategory: str | None = None,
-        version: str = "latest"
+        version: Text = "latest",
     ) -> list[dict[str, Any]]:
-        """
-        Search for skills in the Lightcast skills database.
-        
-        Args:
-            query: Search term for skills
-            limit: Maximum number of results to return (default: 10)
-            skill_type: Filter by skill type (e.g., "Hard Skill", "Soft Skill")
-            category: Filter by skill category
-            subcategory: Filter by skill subcategory
-            version: API version to use (default: "latest", can specify previous versions like "9.33", "9.32", etc.)
-            
-        Returns:
-            List of matching skills with their details
-        """
+        """Search the Skills taxonomy. skill_type accepts type IDs: ST1 (specialized), ST2 (common), ST3 (certification), comma-separated."""
         async with SkillsAPIClient() as client:
-            results = await client.search_skills(
-                query, limit, skill_type, category, subcategory, version
-            )
             return [
-                {
-                    "id": result.id,
-                    "name": result.name,
-                    "type": result.type.name if result.type else None,
-                    "type_id": result.type.id if result.type else None,
-                    "category": result.category,
-                    "subcategory": result.subcategory
-                }
-                for result in results
+                r.model_dump(exclude_none=True)
+                for r in await client.search_skills(
+                    query, limit, skill_type, version=version
+                )
             ]
 
-    @mcp.tool
+    @mcp.tool(tags={"skills"}, annotations=READ_ONLY)
     async def get_skill_details(
-        skill_id: str,
-        version: str = "latest"
+        skill_id: Text, version: Text = "latest"
     ) -> dict[str, Any]:
-        """
-        Get detailed information about a specific skill.
-        
-        Args:
-            skill_id: Lightcast skill ID
-            version: API version to use (default: "latest", can specify previous versions like "9.33", "9.32", etc.)
-            
-        Returns:
-            Detailed skill information including description and metadata
-        """
+        """Get a skill by its Lightcast ID."""
         async with SkillsAPIClient() as client:
-            result = await client.get_skill_by_id(skill_id, version)
-            return {
-                "id": result.id,
-                "name": result.name,
-                "type": result.type,
-                "category": result.category,
-                "subcategory": result.subcategory,
-                "description": result.description,
-                "tags": result.tags,
-                "info_url": result.infoUrl
-            }
+            return (await client.get_skill_by_id(skill_id, version)).model_dump(
+                exclude_none=True
+            )
 
-    @mcp.tool
+    @mcp.tool(tags={"skills"}, annotations=READ_ONLY)
     async def bulk_retrieve_skills(
-        skill_ids: list[str],
-        version: str = "latest"
+        skill_ids: IDs, version: Text = "latest"
     ) -> list[dict[str, Any]]:
-        """
-        Retrieve multiple skills by their IDs in a single efficient request.
-        
-        Args:
-            skill_ids: List of Lightcast skill IDs to retrieve
-            version: API version to use (default: "latest", can specify previous versions like "9.33", "9.32", etc.)
-            
-        Returns:
-            List of detailed skill information for all requested skills
-        """
+        """Retrieve multiple skills in one request."""
         async with SkillsAPIClient() as client:
-            results = await client.bulk_retrieve_skills(skill_ids, version)
             return [
-                {
-                    "id": result.id,
-                    "name": result.name,
-                    "type": result.type.name if result.type else None,
-                    "type_id": result.type.id if result.type else None,
-                    "category": result.category,
-                    "subcategory": result.subcategory,
-                    "description": result.description,
-                    "tags": result.tags,
-                    "info_url": result.infoUrl
-                }
-                for result in results
+                r.model_dump(exclude_none=True)
+                for r in await client.bulk_retrieve_skills(skill_ids, version)
             ]
 
-    @mcp.tool
+    @mcp.tool(tags={"skills"}, annotations=READ_ONLY)
     async def extract_skills_from_text(
-        text: str,
-        confidence_threshold: float = 0.5,
-        version: str = "latest"
+        text: Text, confidence_threshold: Confidence = 0.5, version: Text = "latest"
     ) -> list[dict[str, Any]]:
-        """
-        Extract skills mentioned in a text description.
-        
-        Args:
-            text: Text to analyze for skill mentions
-            confidence_threshold: Minimum confidence score for skill extraction (default: 0.5)
-            version: API version to use (default: "latest", can specify previous versions like "9.33", "9.32", etc.)
-            
-        Returns:
-            List of extracted skills with confidence scores
-        """
+        """Extract explicitly mentioned skills from text. Requires extraction permission and may consume a limited quota."""
         async with SkillsAPIClient() as client:
-            return await client.extract_skills_from_text(text, confidence_threshold, version)
+            return await client.extract_skills_from_text(
+                text, confidence_threshold, version
+            )
 
-    @mcp.tool
+    @mcp.tool(tags={"skills"}, annotations=READ_ONLY)
     async def get_related_skills(
-        skill_id: str,
-        limit: int = 10,
-        version: str = "latest"
+        skill_id: Text, limit: Limit = 10, version: Text = "latest"
     ) -> list[dict[str, Any]]:
-        """
-        Get skills related to a specific skill.
-        
-        Args:
-            skill_id: Lightcast skill ID
-            limit: Maximum number of related skills to return (default: 10)
-            version: API version to use (default: "latest", can specify previous versions like "9.33", "9.32", etc.)
-            
-        Returns:
-            List of related skills with similarity information
-        """
+        """Find related skills using the Skills API. Results are related skills, not scored Similarity mappings."""
         async with SkillsAPIClient() as client:
-            results = await client.get_related_skills(skill_id, limit, version)
             return [
-                {
-                    "id": result.id,
-                    "name": result.name,
-                    "type": result.type.name if result.type else None,
-                    "type_id": result.type.id if result.type else None,
-                    "category": result.category,
-                    "subcategory": result.subcategory
-                }
-                for result in results
+                r.model_dump(exclude_none=True)
+                for r in await client.get_related_skills(skill_id, limit, version)
             ]
 
-    @mcp.tool
-    async def find_similar_skills(
-        skill_id: str,
-        limit: int = 10
-    ) -> list[dict[str, Any]]:
-        """
-        Find similar skills using the Similarity API.
-        
-        Args:
-            skill_id: Lightcast skill ID
-            limit: Maximum number of similar skills to return (default: 10)
-            
-        Returns:
-            List of similar skills with similarity scores
-        """
+    @mcp.tool(tags={"similarity"}, annotations=READ_ONLY)
+    async def find_similar_skills(skill_id: Text, limit: Limit = 10) -> dict[str, Any]:
+        """Find scored similar skills. Requires the separate Similarity API subscription."""
         async with SimilarityAPIClient() as client:
-            results = await client.get_similar_skills(skill_id, limit)
-            return results
+            return await client.query_model("skill", skill_id, limit)
 
-    @mcp.tool
-    async def get_skills_metadata(
-        version: str = "latest"
-    ) -> dict[str, Any]:
-        """
-        Get metadata about the Lightcast skills taxonomy.
-        
-        Args:
-            version: API version to use (default: "latest", can specify previous versions like "9.33", "9.32", etc.)
-            
-        Returns:
-            Metadata about the skills database including statistics and version info
-        """
+    @mcp.tool(tags={"skills"}, annotations=READ_ONLY)
+    async def get_skills_metadata(version: Text = "latest") -> dict[str, Any]:
+        """Discover the Skills taxonomy version, supported fields, and skill types."""
         async with SkillsAPIClient() as client:
             return await client.get_skills_metadata(version)

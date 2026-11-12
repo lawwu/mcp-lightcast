@@ -1,188 +1,203 @@
-"""Base API client for Lightcast APIs."""
+"""Shared transport for documented, read-only Lightcast API operations."""
 
-import sys
-from abc import ABC
-from pathlib import Path
-from typing import Any
+import asyncio
+import time
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
+from typing import Any, Self
+from urllib.parse import quote
+from weakref import WeakKeyDictionary
 
 import httpx
 
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-try:
-    from config.settings import lightcast_config
-except ImportError:
-    from pydantic import ConfigDict, Field
-    from pydantic_settings import BaseSettings
-
-    class LightcastConfig(BaseSettings):
-        model_config = ConfigDict(extra="ignore")
-
-        client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
-        client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
-        base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
-        oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
-        oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
-
-    lightcast_config = LightcastConfig()
-
-from ..auth.oauth import AuthenticationError, lightcast_auth
+from ..auth.oauth import lightcast_auth
+from ..settings import get_settings
 
 
 class APIError(Exception):
-    """Exception raised for API errors."""
-
-    def __init__(self, message: str, status_code: int | None = None, response_data: dict | None = None):
-        self.message = message
+    def __init__(
+        self, message: str, status_code: int | None = None, response_data: Any = None
+    ):
         self.status_code = status_code
         self.response_data = response_data
         super().__init__(message)
 
 
 class RateLimitError(APIError):
-    """Exception raised when rate limit is exceeded."""
-    pass
+    """Quota or request rate exceeded; response_data contains reset headers."""
 
 
-class BaseLightcastClient(ABC):
-    """Base client for Lightcast API interactions."""
+def segment(value: str) -> str:
+    """Keep caller-provided IDs within a single URL path segment."""
+    if not value or value in {".", ".."}:
+        raise ValueError(
+            "An identifier or version must be nonempty and cannot be '.' or '..'."
+        )
+    return quote(value, safe="")
 
-    # API-specific OAuth scopes for premium APIs
+
+_rate_state: WeakKeyDictionary = WeakKeyDictionary()
+
+
+class BaseLightcastClient:
     API_SCOPES = {
-        "skills": "emsi_open",
-        "titles": "emsi_open",
-        "classification": "classification_api",  # Still need to confirm this one
+        "classification": "classification_api",
         "similarity": "similarity",
         "occupation_benchmark": "occupation-benchmark",
         "career_pathways": "career-pathways",
-        "job_postings": "postings:us"
+        "job_postings": "postings:us",
+    }
+    API_PATHS = {
+        "skills": "skills",
+        "titles": "titles",
+        "similarity": "similarity",
+        "occupation_benchmark": "occupation-benchmark",
+        "career_pathways": "career-pathways",
+        "job_postings": "jpa",
     }
 
-    # Correct base URLs for different APIs based on reference implementation
-    API_BASE_URLS = {
-        "skills": "https://emsiservices.com/skills",
-        "titles": "https://emsiservices.com/titles",
-        "classification": "https://classification.emsicloud.com",
-        "similarity": "https://emsiservices.com/similarity",
-        "occupation_benchmark": "https://emsiservices.com/occupation-benchmark",
-        "career_pathways": "https://emsiservices.com/career-pathways",
-        "job_postings": "https://emsiservices.com/jpa"
-    }
-
-    def __init__(self, api_name: str | None = None):
-        # Use API-specific base URL if available, otherwise fall back to default
-        if api_name and api_name in self.API_BASE_URLS:
-            self.base_url = self.API_BASE_URLS[api_name]
-        else:
-            self.base_url = lightcast_config.base_url
+    def __init__(self, api_name: str | None = None) -> None:
+        self.config = get_settings()
         self.api_name = api_name
-
-        # Store the required scope for this API client, but don't set it globally yet
-        if api_name and api_name in self.API_SCOPES:
-            self.required_scope = self.API_SCOPES[api_name]
-        else:
-            self.required_scope = lightcast_config.oauth_scope
-
-        self.client = httpx.AsyncClient(
-            timeout=httpx.Timeout(30.0),
-            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100)
+        self.base_url = self.config.base_url.rstrip("/")
+        if api_name == "classification":
+            self.base_url = self.config.classification_url.rstrip("/")
+        elif api_name in self.API_PATHS:
+            self.base_url += "/" + self.API_PATHS[api_name]
+        self.required_scope = self.config.api_scopes.get(
+            api_name or "", self.API_SCOPES.get(api_name or "", self.config.oauth_scope)
         )
+        self.client = httpx.AsyncClient(timeout=self.config.timeout)
+        self._auth = lightcast_auth
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool | None:
         await self.client.aclose()
+        return None
+
+    async def _throttle(self) -> None:
+        states = _rate_state.setdefault(asyncio.get_running_loop(), {})
+        lock, times = states.setdefault(
+            (self.base_url, self.config.client_id), (asyncio.Lock(), [0.0])
+        )
+        async with lock:
+            await asyncio.sleep(max(0, times[0] - time.monotonic()))
+            times[0] = time.monotonic() + 1 / self.config.requests_per_second
+
+    @staticmethod
+    def _retry_delay(response: httpx.Response, attempt: int) -> float | None:
+        raw = response.headers.get("Retry-After")
+        if raw:
+            try:
+                delay = float(raw)
+            except ValueError:
+                try:
+                    delay = (
+                        parsedate_to_datetime(raw) - datetime.now(UTC)
+                    ).total_seconds()
+                except (TypeError, ValueError):
+                    return None
+            return max(0, delay) if delay <= 5 else None
+        # A 429 without Retry-After may be a monthly/yearly quota.
+        return None if response.status_code == 429 else 0.5 * 2**attempt
 
     async def _make_request(
         self,
         method: str,
         endpoint: str,
-        data: dict | str | None = None,
+        data: Any = None,
         params: dict[str, Any] | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> dict[str, Any]:
-        """Make an authenticated request to the Lightcast API."""
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-
-        # Replace version placeholder in URL
-        if "{version}" in url:
-            url = url.replace("{version}", version)
-
-        try:
-            # Set the correct scope for this API before getting auth headers
-            lightcast_auth._scope = self.required_scope
-            headers = await lightcast_auth.get_auth_headers()
-
-            # Handle different content types
+        url = f"{self.base_url}/{endpoint.lstrip('/')}".replace(
+            "{version}", segment(version)
+        )
+        refreshed = False
+        retries = 0
+        while True:
+            headers = await self._auth.get_auth_headers(self.required_scope)
             if isinstance(data, str):
                 headers["Content-Type"] = "text/plain"
-                json_data = None
-                content = data
-            else:
-                json_data = data
-                content = None
-
-            response = await self.client.request(
-                method=method,
-                url=url,
-                json=json_data,
-                content=content,
-                params=params,
-                headers=headers
-            )
-
-            # Handle rate limiting
-            if response.status_code == 429:
-                rate_limit_reset = response.headers.get("RateLimit-Reset")
-                raise RateLimitError(
-                    f"Rate limit exceeded. Reset at: {rate_limit_reset}",
-                    status_code=429,
-                    response_data={"reset_time": rate_limit_reset}
-                )
-
-            response.raise_for_status()
-
-            # Handle different response types
-            content_type = response.headers.get("content-type", "")
-            if "application/json" in content_type:
-                return response.json()
-            else:
-                return {"data": response.text, "content_type": content_type}
-
-        except httpx.HTTPStatusError as e:
-            error_data = None
+            await self._throttle()
             try:
-                error_data = e.response.json() if e.response.headers.get("content-type", "").startswith("application/json") else {"error": e.response.text}
-            except Exception:
-                error_data = {"error": str(e)}
+                response = await self.client.request(
+                    method=method,
+                    url=url,
+                    headers=headers,
+                    params=params,
+                    json=None if isinstance(data, str) else data,
+                    content=data if isinstance(data, str) else None,
+                )
+            except httpx.RequestError as exc:
+                raise APIError(
+                    f"Lightcast request failed ({type(exc).__name__})."
+                ) from None
+            if response.status_code == 401 and not refreshed:
+                self._auth.invalidate(
+                    self.required_scope,
+                    headers["Authorization"].removeprefix("Bearer "),
+                )
+                refreshed = True
+                continue
+            if (
+                response.status_code in {429, 502, 503, 504}
+                and retries < self.config.max_retries
+            ):
+                delay = self._retry_delay(response, retries)
+                if delay is not None:
+                    await asyncio.sleep(delay)
+                    retries += 1
+                    continue
+            if response.status_code == 429:
+                raise RateLimitError(
+                    "Lightcast rate limit or quota exceeded. Check reset headers before retrying.",
+                    429,
+                    {
+                        "retry_after": response.headers.get("Retry-After"),
+                        "reset_time": response.headers.get("RateLimit-Reset"),
+                        "remaining": response.headers.get("RateLimit-Remaining"),
+                    },
+                )
+            if not response.is_success:
+                try:
+                    details = response.json()
+                except ValueError:
+                    details = None
+                hint = (
+                    " Check your API scope and subscription permissions."
+                    if response.status_code in {401, 403}
+                    else ""
+                )
+                raise APIError(
+                    f"Lightcast {self.api_name or 'API'} request failed (HTTP {response.status_code}).{hint}",
+                    response.status_code,
+                    details,
+                )
+            try:
+                result = response.json()
+            except ValueError:
+                raise APIError("Lightcast returned an invalid JSON response.") from None
+            if not isinstance(result, dict):
+                raise APIError("Lightcast returned an unexpected response shape.")
+            return result
 
-            raise APIError(
-                f"API request failed: {e.response.status_code} {e.response.reason_phrase}",
-                status_code=e.response.status_code,
-                response_data=error_data
-            ) from e
-        except AuthenticationError:
-            raise
-        except RateLimitError:
-            raise
-        except Exception as e:
-            raise APIError(f"Request failed: {str(e)}") from e
-
-    async def get(self, endpoint: str, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
-        """Make a GET request."""
+    async def get(
+        self,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        version: str = "latest",
+    ) -> dict[str, Any]:
         return await self._make_request("GET", endpoint, params=params, version=version)
 
-    async def post(self, endpoint: str, data: dict | str | None = None, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
-        """Make a POST request."""
-        return await self._make_request("POST", endpoint, data=data, params=params, version=version)
-
-    async def put(self, endpoint: str, data: dict | str | None = None, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
-        """Make a PUT request."""
-        return await self._make_request("PUT", endpoint, data=data, params=params, version=version)
-
-    async def delete(self, endpoint: str, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
-        """Make a DELETE request."""
-        return await self._make_request("DELETE", endpoint, params=params, version=version)
+    async def post(
+        self,
+        endpoint: str,
+        data: Any = None,
+        params: dict[str, Any] | None = None,
+        version: str = "latest",
+    ) -> dict[str, Any]:
+        return await self._make_request(
+            "POST", endpoint, data=data, params=params, version=version
+        )

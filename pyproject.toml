@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-lightcast"
-version = "0.2.1"
+version = "0.3.0"
 # dynamic = ["version"]  # Disabled in favor of static version
 description = "MCP server for Lightcast API integration using FastMCP"
 readme = "README.md"
@@ -23,13 +23,15 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 
 dependencies = [
-    "fastmcp>=2.11.0",
+    "fastmcp>=2.14,<3",
     "httpx>=0.25.0", 
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
@@ -39,13 +41,16 @@ dependencies = [
 requires-python = ">=3.12"
 
 [project.urls]
-Homepage = "https://github.com/your-username/mcp-lightcast"
-Repository = "https://github.com/your-username/mcp-lightcast"
-Issues = "https://github.com/your-username/mcp-lightcast/issues"
-Documentation = "https://github.com/your-username/mcp-lightcast/blob/main/README.md"
-Changelog = "https://github.com/your-username/mcp-lightcast/releases"
+Homepage = "https://github.com/lawwu/mcp-lightcast"
+Repository = "https://github.com/lawwu/mcp-lightcast"
+Issues = "https://github.com/lawwu/mcp-lightcast/issues"
+Documentation = "https://lawwu.github.io/mcp-lightcast/"
+Changelog = "https://github.com/lawwu/mcp-lightcast/releases"
 
 [dependency-groups]
+docs = [
+    "zensical>=0.1.1",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0", 
@@ -70,8 +75,10 @@ mcp-lightcast = "mcp_lightcast:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 addopts = "--asyncio-mode=auto"
+markers = ["live: opt-in tests against the actual Lightcast API"]
 
 [tool.black]
 line-length = 88
@@ -96,6 +103,14 @@ strict_optional = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_lightcast"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src", "/tests", "/docs", "/examples", "/config",
+    "/README.md", "/LICENSE", "/pyproject.toml", "/uv.lock", "/mkdocs.yml",
+    "/.env.example", "/Dockerfile", "/Dockerfile.dev", "/docker-compose.yml",
+    "/run_server.py", "/scripts/docs.py",
+]
 
 [tool.coverage.run]
 source = ["src"]

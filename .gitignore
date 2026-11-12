@@ -476,3 +476,9 @@ test_local.py
 debug.py
 playground.py
 scratch.py
+# Generated tool reference; rebuilt from the registered MCP schemas.
+docs/reference/tools.md
+!.dockerignore
+
+# Documentation builder cache
+.cache/zensical/

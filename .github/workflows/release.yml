@@ -39,6 +39,15 @@ jobs:
     - name: Install dependencies
       run: uv sync --all-groups --frozen
 
+    - name: Verify release version
+      env:
+        RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+      run: |
+        uv run python -c 'import os, tomllib; expected = os.environ["RELEASE_VERSION"].removeprefix("v"); actual = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]; assert actual == expected, (actual, expected)'
+
+    - name: Build documentation
+      run: uv run --group docs python scripts/docs.py build --strict
+
     - name: Run tests
       run: uv run pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
       env:
@@ -133,73 +142,16 @@ jobs:
       id: version
       run: printf 'version=%s\n' "${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
-    - name: Generate release notes
-      id: release_notes
-      env:
-        RELEASE_VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        python3 - <<'PY'
-        import os
-        from pathlib import Path
-
-        notes = """## MCP Lightcast v@VERSION@
-
-        ### 🚀 Features
-        - Complete Skills API integration with 6/10 endpoints working
-        - Complete Titles API integration with 5/8 endpoints working
-        - Skills extraction from text with high accuracy
-        - Bulk operations for efficient data retrieval
-        - Modern OAuth2 authentication with Lightcast APIs
-        - FastMCP-based server with streamable-HTTP transport
-        - uv package management with lock files
-        - Docker deployment support
-        - Comprehensive CLI interface
-
-        ### 📊 API Coverage
-        - **Skills API**: search, individual retrieval, bulk operations, text extraction, metadata
-        - **Titles API**: search, individual retrieval, bulk operations, metadata
-        - **Version Support**: Uses "latest" keyword with backward compatibility
-        - **Authentication**: OAuth2 with emsi_open scope
-
-        ### 🛠️ Installation
-        ```bash
-        # Using uv (recommended)
-        uvx --from mcp-lightcast mcp-lightcast
-
-        # Using pip
-        pip install mcp-lightcast
-
-        # Using Docker
-        docker run -e LIGHTCAST_CLIENT_ID=your_id -e LIGHTCAST_CLIENT_SECRET=your_secret ghcr.io/your-username/mcp-lightcast
-        ```
-
-        ### 📚 Documentation
-        See the [README](https://github.com/@REPOSITORY@/blob/main/README.md) for complete setup and usage instructions.
-
-        ### 🔗 Links
-        - [PyPI Package](https://pypi.org/project/mcp-lightcast/)
-        - [Docker Image](https://github.com/@REPOSITORY@/pkgs/container/mcp-lightcast)
-        - [Testing Summary](https://github.com/@REPOSITORY@/blob/main/TESTING_SUMMARY.md)
-        """
-        notes = notes.replace("@VERSION@", os.environ["RELEASE_VERSION"])
-        notes = notes.replace("@REPOSITORY@", os.environ["GITHUB_REPOSITORY"])
-        Path("release_notes.md").write_text(notes)
-        PY
-
-    - name: Create Release
+    - name: Create release with generated notes
       env:
         GH_TOKEN: ${{ github.token }}
         RELEASE_VERSION: ${{ steps.version.outputs.version }}
       run: |
         if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --title "MCP Lightcast v$RELEASE_VERSION" --notes-file release_notes.md \
-            --draft=false --prerelease=false
           gh release upload "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.whl \
             --repo "$GITHUB_REPOSITORY" --clobber
         else
           gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.whl \
             --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
-            --title "MCP Lightcast v$RELEASE_VERSION" --notes-file release_notes.md \
-            --prerelease=false
+            --title "MCP Lightcast v$RELEASE_VERSION" --prerelease=false
         fi
