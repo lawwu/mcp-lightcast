@@ -22,6 +22,7 @@ MCP client
 | --- | --- |
 | `settings.py` | Lazy packaged settings and scope overrides |
 | `auth/oauth.py` | Token caching, refresh, concurrency, sanitized authentication errors |
+| `auth/credentials.py` | Immutable credentials, asynchronous providers, request-local resolution |
 | `apis/base.py` | Service roots, HTTP requests, retries, rate limits, error types |
 | `apis/` | Documented request/response contracts |
 | `tools/` | MCP tools, validation, and composed workflows |
@@ -30,9 +31,11 @@ MCP client
 
 ## Authentication and concurrency
 
-Scope is an argument to authentication, never a mutable global selector. Requests to different API families cannot switch each other’s scope. Same-scope refreshes are coalesced with a lock; tokens refresh before expiry. A late `401` cannot invalidate a newer token from another request.
+Scope is an argument to authentication, never a mutable global selector. Tokens and refresh locks are keyed by a process-keyed HMAC of the OAuth endpoint and credential pair, plus scope. Requests cannot switch each other's account or scope. Refreshes for the same key are coalesced; tokens refresh before expiry. A late `401` cannot invalidate a newer token from another request. Token and metadata caches are bounded.
 
-HTTP clients are closed when a tool finishes. Rate spacing is shared across those short-lived clients within an event loop. Locks are not reused across event loops.
+`create_server(credential_provider=..., auth=...)` installs a request-local resolver. It resolves lazily once per request, so every API call in a composed workflow sees the same immutable credentials. The built-in providers read either environment settings or explicit HTTP headers, with no fallback between modes. Custom asynchronous providers can enforce caller-to-account authorization before reading a secret store. The separate FastMCP `auth` provider verifies inbound MCP identity. See [credential providers](credentials.md).
+
+HTTP clients are closed when a tool finishes. Rate spacing is shared across those short-lived clients by account, OAuth endpoint, and API root within an event loop; rotating a secret does not reset account spacing. Idle rate state is reclaimed, with a cap on active entries. Locks are not reused across event loops. Distributed rate enforcement remains the deployment's responsibility.
 
 ## Truthful results
 

@@ -1,6 +1,6 @@
 # Deploy the docs and server
 
-The documentation is a static website. The MCP server runs separately and keeps your Lightcast credentials on the machine hosting it.
+The documentation is a static website. The MCP server runs separately. By default it reads Lightcast credentials from its environment; the unreleased [credential-provider support](credentials.md) also permits HTTP headers or a deployment-specific secret store.
 
 ## Automatic GitHub Pages deployment
 
@@ -127,6 +127,8 @@ server {
 Connect clients to `https://mcp.example.com/mcp` or `https://mcp.example.com/lightcast/mcp`. Health probes use `/health` or `/lightcast/health` respectively. Preserve the external Host, Origin, and MCP headers, including session and protocol headers. Disabling response buffering allows SSE events to reach clients immediately. The trailing slash in the prefixed `proxy_pass` removes only that prefix.
 
 This configuration handles TLS and forwarding; it does not add inbound authentication. Use it with your authenticated gateway before sharing the Lightcast account. Host/Origin allowlists are not authentication or CORS. Explicit HTTPS origins also avoid relying on a proxy's forwarded scheme for origin validation; forwarding an allowed hostname in `X-Forwarded-Host` does not override an untrusted Host.
+
+For optional header credentials, set `LIGHTCAST_CREDENTIAL_MODE=headers` and preserve `X-Lightcast-Client-Id` and `X-Lightcast-Client-Secret` on each request. Never log these headers or add them to trace attributes. Keep proxy caching disabled. A gateway injecting credentials must remove caller-supplied copies first. See the [credential-provider deployment requirements](credentials.md#optional-http-headers), including the separate requirement for inbound MCP authentication.
 
 The [proxy test suite](testing.md#reverse-proxy-integration) exercises nginx HTTPS with a verified temporary certificate, root and prefixed routes, both MCP protocol versions, tool discovery, resource reads, a Core LMI query using synthetic data, and rejected Host/Origin headers. It does not validate a production authentication gateway or live Lightcast entitlements.
 

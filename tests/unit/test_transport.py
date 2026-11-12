@@ -58,7 +58,7 @@ async def test_quota_is_not_retried(api_mock, headers):
 async def test_401_refreshes_only_once(api_mock, monkeypatch):
     invalidations = []
     monkeypatch.setattr(
-        lightcast_auth, "invalidate", lambda *args: invalidations.append(args)
+        lightcast_auth, "invalidate", lambda *args, **kwargs: invalidations.append(args)
     )
     api_mock.add_response(status_code=401)
     api_mock.add_response(status_code=401)

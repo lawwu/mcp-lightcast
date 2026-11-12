@@ -304,6 +304,9 @@ async def test_core_rate_spacing_is_shared_between_clients(monkeypatch):
 
     monkeypatch.setattr(base.asyncio, "sleep", sleep)
     async with CoreLmiAPIClient() as first, CoreLmiAPIClient() as second:
-        await first._throttle()
-        await second._throttle()
+        from mcp_lightcast.auth.credentials import get_credentials
+
+        credentials = await get_credentials()
+        await first._throttle(credentials)
+        await second._throttle(credentials)
     assert delays == [0, 1]

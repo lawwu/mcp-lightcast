@@ -6,10 +6,10 @@ services:
     volumes:
       - ./lightcast.py:/fixture/lightcast.py:ro
 
-  server:
+  server: &server
     image: mcp-lightcast:test
     command: ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "3000", "--quiet"]
-    environment:
+    environment: &server_environment
       LIGHTCAST_CLIENT_ID: proxy-test-client
       LIGHTCAST_CLIENT_SECRET: proxy-test-secret
       LIGHTCAST_OAUTH_URL: http://lightcast-fixture:8000/token
@@ -19,6 +19,13 @@ services:
       FASTMCP_MCP_CAMELCASE_COMPAT: "false"
     depends_on:
       - lightcast-fixture
+
+  header-server:
+    <<: *server
+    environment:
+      <<: *server_environment
+      LIGHTCAST_CREDENTIAL_MODE: headers
+      LIGHTCAST_CORE_LMI_REQUESTS_PER_SECOND: "100"
 
   proxy:
     image: nginx:1.30.6-alpine
@@ -32,6 +39,7 @@ services:
         host_ip: 127.0.0.1
     depends_on:
       - server
+      - header-server
 
 networks:
   default:

@@ -81,6 +81,8 @@ The image targets Linux amd64; Docker can emulate it on Apple Silicon. Moving ta
 
 ## What you can do
 
+**Unreleased in this checkout:** [credential providers](docs/credentials.md) keep environment credentials for local use and add optional HTTP credential headers, account-isolated token caches, and a custom provider interface for authorized secret-store integrations. These features are not included in v0.3.1.
+
 | Task | Tools |
 | --- | --- |
 | Search, retrieve, and extract skills | `search_skills`, `get_skill_details`, `bulk_retrieve_skills`, `extract_skills_from_text` |

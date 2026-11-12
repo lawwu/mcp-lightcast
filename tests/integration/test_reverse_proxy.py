@@ -1,5 +1,6 @@
 """Real nginx TLS termination and prefix routing, with no live Lightcast traffic."""
 
+import asyncio
 import json
 import os
 import ssl
@@ -99,6 +100,17 @@ def proxy_stack(tmp_path_factory):
                     "Proxy did not become healthy:\n" + run("logs", "--tail", "60")
                 )
         yield url, verify
+        logs = run("logs")
+        for secret in (
+            "proxy-test-secret",
+            "synthetic-secret-a",
+            "synthetic-secret-b",
+            "wrong-private-secret",
+            "synthetic-token-proxy-test-client",
+            "synthetic-token-account-a",
+            "synthetic-token-account-b",
+        ):
+            assert secret not in logs
     finally:
         run("down", "--volumes", "--remove-orphans", check=False)
 
@@ -179,3 +191,67 @@ async def test_proxy_network_exception_never_allows_external_requests(library):
     async with library.AsyncClient(trust_env=False) as client:
         with pytest.raises(AssertionError, match="Unmocked network request"):
             await client.get("https://api.lightcast.io")
+
+
+@pytest.mark.parametrize("mode", ["auto", "legacy"])
+async def test_header_accounts_are_isolated_through_tls_proxy(proxy_stack, mode):
+    url, verify = proxy_stack
+
+    def make_client(credentials):
+        def http_client(**kwargs):
+            return httpx2.AsyncClient(verify=verify, trust_env=False, **kwargs)
+
+        return Client(
+            StreamableHttpTransport(
+                f"{url}/headers/mcp",
+                headers={**HEADERS, **credentials},
+                httpx_client_factory=http_client,
+            ),
+            mode=mode,
+            timeout=15,
+        )
+
+    async def query(account, secret, expected):
+        credentials = (
+            {}
+            if account is None
+            else {
+                "X-Lightcast-Client-Id": account,
+                "X-Lightcast-Client-Secret": secret,
+            }
+        )
+        async with make_client(credentials) as client:
+            result = await client.call_tool(
+                "query_core_lmi",
+                {
+                    "dataset": "emsi.us.occupation",
+                    "version": "2026.4",
+                    "query": {
+                        "metrics": [{"name": "Jobs.2025"}],
+                        "constraints": [],
+                        "limit": 2,
+                    },
+                },
+                raise_on_error=False,
+            )
+            if expected is None:
+                assert result.is_error
+                assert "wrong-private-secret" not in str(result)
+            else:
+                assert not result.is_error
+                assert result.structured_content["data"][0]["rows"] == [expected, None]
+                health = await client.read_resource("lightcast://server/health")
+                assert json.loads(health[0].text)["authentication"] == "verified"
+
+    await asyncio.gather(
+        query("account-a", "synthetic-secret-a", 101),
+        query("account-b", "synthetic-secret-b", 202),
+    )
+    await asyncio.gather(
+        query("account-a", "wrong-private-secret", None),
+        query(None, None, None),
+        query("account-b", "synthetic-secret-b", 202),
+    )
+    async with httpx.AsyncClient(verify=verify, trust_env=False) as client:
+        health = await client.get(f"{url}/headers/health", headers=HEADERS)
+        assert health.status_code == 200 and health.json() == {"status": "ok"}

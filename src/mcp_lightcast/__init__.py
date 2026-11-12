@@ -62,7 +62,16 @@ def main(
     )
     # HTTP request logging can expose query text; keep it off by default.
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    if not config.client_id or not config.client_secret:
+    if config.credential_mode == "headers" and (
+        transport != "streamable-http" or validate_config
+    ):
+        raise click.ClickException(
+            "Header credentials require --transport streamable-http and cannot use "
+            "--validate-config; credentials are supplied on each HTTP request."
+        )
+    if config.credential_mode == "environment" and (
+        not config.client_id or not config.client_secret
+    ):
         raise click.ClickException(
             "Set LIGHTCAST_CLIENT_ID and LIGHTCAST_CLIENT_SECRET (or use --env-file)."
         )

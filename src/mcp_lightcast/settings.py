@@ -1,6 +1,7 @@
 """Packaged, lazy configuration shared by the CLI and API clients."""
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -8,6 +9,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class LightcastConfig(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    credential_mode: Literal["environment", "headers"] = Field(
+        default="environment", alias="LIGHTCAST_CREDENTIAL_MODE"
+    )
     client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID", repr=False)
     client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET", repr=False)
     base_url: str = Field(

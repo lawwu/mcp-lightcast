@@ -40,6 +40,7 @@ def isolated_environment(monkeypatch, request):
     lightcast_auth._tokens.clear()
     if "live" not in request.node.keywords:
         monkeypatch.setenv("LIGHTCAST_CLIENT_ID", "unit-test-client")
+        monkeypatch.setenv("LIGHTCAST_CREDENTIAL_MODE", "environment")
         monkeypatch.setenv("LIGHTCAST_CLIENT_SECRET", "unit-test-secret")
         monkeypatch.setenv("LIGHTCAST_BASE_URL", "https://api.lightcast.io")
         monkeypatch.setenv(
@@ -81,7 +82,7 @@ def isolated_environment(monkeypatch, request):
 
 @pytest.fixture
 def api_mock(httpx_mock, monkeypatch):
-    async def headers(scope=None):
+    async def headers(scope=None, *, credentials=None):
         return {
             "Authorization": f"Bearer test-{scope}",
             "Content-Type": "application/json",

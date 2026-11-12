@@ -3,21 +3,28 @@
 import time
 
 from ..apis.base import APIError, BaseLightcastClient
+from ..auth.credentials import get_credentials
+from ..settings import get_settings
 
 
 class VersionManager:
     def __init__(self) -> None:
-        self._cache: dict[str, tuple[str, float]] = {}
+        self._cache: dict[tuple[str, str, str], tuple[str, float]] = {}
 
     async def _latest(self, api: str) -> str:
-        version, expires = self._cache.get(api, ("", 0))
+        config = get_settings()
+        credentials = await get_credentials()
+        key = (api, config.base_url, credentials.identity(config.oauth_url))
+        version, expires = self._cache.get(key, ("", 0))
         if time.monotonic() < expires:
             return version
         async with BaseLightcastClient(api) as client:
             version = (await client.get("meta")).get("data", {}).get("latestVersion")
         if not isinstance(version, str) or not version:
             raise APIError(f"No latest version in {api} metadata.")
-        self._cache[api] = (version, time.monotonic() + 3600)
+        self._cache[key] = (version, time.monotonic() + 3600)
+        if len(self._cache) > 256:
+            self._cache.pop(next(iter(self._cache)))
         return version
 
     async def get_latest_titles_version(self) -> str:
