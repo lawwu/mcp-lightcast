@@ -1,6 +1,6 @@
 # Deploy the docs and server
 
-The documentation is a static website. The MCP server runs separately. By default it reads Lightcast credentials from its environment; the unreleased [credential-provider support](credentials.md) also permits HTTP headers or a deployment-specific secret store.
+The documentation is a static website. The MCP server runs separately. By default it reads Lightcast credentials from its environment; [credential-provider support](credentials.md), available since v0.4.0, also permits HTTP headers or a deployment-specific secret store.
 
 ## Automatic GitHub Pages deployment
 
@@ -32,7 +32,7 @@ Configure the PyPI project's GitHub trusted publisher for owner `lawwu`, reposit
 
 If publishing fails, fix the reported credential or service problem and rerun only failed jobs. Never move an already-pushed release tag or replace a PyPI version. Successful publishers are not repeated when rerunning failed jobs, and the GitHub release job can safely update its existing notes and assets.
 
-See the [0.3.1 release notes](releases/0.3.1.md) and [migration guide](migration.md).
+See the [0.4.0 release notes](releases/0.4.0.md) and [migration guide](migration.md).
 
 ## Dependency maintenance
 

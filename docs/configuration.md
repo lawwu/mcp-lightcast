@@ -6,7 +6,7 @@ The installed package and repository checkout use the same configuration. Values
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `LIGHTCAST_CREDENTIAL_MODE` | `environment` | Credential source: `environment` or HTTP-only `headers` (unreleased) |
+| `LIGHTCAST_CREDENTIAL_MODE` | `environment` | Credential source: `environment` or HTTP-only `headers` (available since 0.4.0) |
 | `LIGHTCAST_CLIENT_ID` | Required in environment mode | OAuth client ID |
 | `LIGHTCAST_CLIENT_SECRET` | Required in environment mode | OAuth client secret |
 | `LIGHTCAST_OAUTH_SCOPE` | `emsi_open` | Scope for Skills and Titles; free-tier accounts may need `lightcast_open_free` |
