@@ -4,7 +4,7 @@
 
 [Documentation](https://lawwu.github.io/mcp-lightcast/) · [Tool reference](https://lawwu.github.io/mcp-lightcast/reference/tools/) · [API review](docs/review.md)
 
-37 MCP tools for Skills, Titles, Classification, Similarity, Occupation Benchmark, Career Pathways, US Job Postings, and Core LMI. Built with Python 3.12+, FastMCP 4, and scope-specific OAuth authentication.
+37 MCP tools for Skills, Titles, Classification, Similarity, Occupation Benchmark, Career Pathways, US Job Postings, and Core LMI. Built with Python 3.14+, FastMCP 4, and scope-specific OAuth authentication.
 
 ## Quick start
 

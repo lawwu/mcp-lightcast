@@ -108,7 +108,7 @@ class BaseLightcastClient:
                     delay = (
                         parsedate_to_datetime(raw) - datetime.now(UTC)
                     ).total_seconds()
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     return None
             return max(0, delay) if delay <= 5 else None
         # A 429 without Retry-After may be a monthly/yearly quota.

@@ -1,6 +1,6 @@
 # Connect in a few minutes
 
-You need Python **3.12 or later**, [uv](https://docs.astral.sh/uv/getting-started/installation/), and Lightcast client credentials. Request credentials through [Lightcast API access](https://lightcast.io/our-data/api/access).
+You need Python **3.14 or later**, [uv](https://docs.astral.sh/uv/getting-started/installation/), and Lightcast client credentials. Request credentials through [Lightcast API access](https://lightcast.io/our-data/api/access).
 
 ## Install this version
 

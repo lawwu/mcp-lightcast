@@ -1,6 +1,6 @@
 # Working on MCP Lightcast
 
-Python 3.12+, FastMCP 4; package imports use `mcp_lightcast`, not `src.mcp_lightcast`. Run commands with uv.
+Python 3.14+, FastMCP 4; package imports use `mcp_lightcast`, not `src.mcp_lightcast`. Run commands with uv. CI tests Python 3.14 and 3.15.
 
 ```bash
 uv sync --all-groups --frozen

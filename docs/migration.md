@@ -2,6 +2,12 @@
 
 This refresh corrects several public contracts. Review these changes when upgrading existing clients.
 
+## Python requirement
+
+The minimum Python version is now **3.14**. Python 3.12 and 3.13 are no longer supported. Upgrade the interpreter used by your MCP client or install Python 3.14 with `uv python install 3.14`, then recreate the project environment with `uv sync --python 3.14 --all-groups --frozen`. CI covers 3.14 and 3.15; Docker, documentation, and release builds use 3.14.
+
+## API and client changes
+
 | Before | Now |
 | --- | --- |
 | Default HTTP transport | Default `stdio`; request `--transport streamable-http` for HTTP |

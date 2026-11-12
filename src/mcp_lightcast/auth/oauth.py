@@ -65,7 +65,7 @@ class LightcastAuth:
                 f"Authentication failed (HTTP {exc.response.status_code}) for scope '{scope}'. "
                 "Check credentials and the scopes enabled for your account."
             ) from None
-        except (httpx.RequestError, ValidationError, ValueError):
+        except httpx.RequestError, ValidationError, ValueError:
             raise AuthenticationError(
                 "Authentication service failed or returned an invalid token response."
             ) from None

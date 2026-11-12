@@ -31,7 +31,7 @@ jobs:
           version: '0.13.7'
       - uses: actions/setup-python@v7.1.0
         with:
-          python-version: '3.12'
+          python-version: '3.14'
       - run: uv sync --frozen --no-dev --group docs
       - run: uv run --frozen --no-dev --group docs python scripts/docs.py build --strict
       - uses: actions/upload-pages-artifact@v3.0.1

@@ -22,9 +22,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     "Topic :: Scientific/Engineering :: Information Analysis",
@@ -38,7 +37,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "click>=8.0.0",
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 
 [project.urls]
 Homepage = "https://github.com/lawwu/mcp-lightcast"
@@ -82,18 +81,18 @@ markers = ["live: opt-in tests against the actual Lightcast API"]
 
 [tool.black]
 line-length = 88
-target-version = ['py312']
+target-version = ['py314']
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP"]
 ignore = ["E501"]  # Line too long
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
