@@ -19,7 +19,7 @@ class TestLightcastAuth:
     @pytest.fixture
     def auth_instance(self):
         """Create a LightcastAuth instance for testing."""
-        with patch('src.mcp_lightcast.auth.oauth.lightcast_config') as mock_config:
+        with patch("src.mcp_lightcast.auth.oauth.lightcast_config") as mock_config:
             mock_config.client_id = "test_client_id"
             mock_config.client_secret = "test_client_secret"
             mock_config.oauth_url = "https://auth.lightcast.io/oauth/token"
@@ -33,7 +33,7 @@ class TestLightcastAuth:
             "access_token": "test_token",
             "token_type": "Bearer",
             "expires_in": 3600,
-            "scope": "openapi"
+            "scope": "openapi",
         }
 
         token = TokenResponse(**token_data)
@@ -63,7 +63,9 @@ class TestLightcastAuth:
         """Test token validation near expiry (within 60 second buffer)."""
         auth_instance._token = "test_token"
         auth_instance._token_expires_at = time.time() + 30  # Expires in 30 seconds
-        assert not auth_instance._is_token_valid()  # Should be invalid due to 60s buffer
+        assert (
+            not auth_instance._is_token_valid()
+        )  # Should be invalid due to 60s buffer
 
     @pytest.mark.asyncio
     async def test_refresh_token_success(self, auth_instance, mock_successful_response):
@@ -71,12 +73,12 @@ class TestLightcastAuth:
         token_response_data = {
             "access_token": "new_test_token",
             "token_type": "Bearer",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
         mock_response = mock_successful_response(token_response_data)
 
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.post.return_value = mock_response
@@ -101,7 +103,7 @@ class TestLightcastAuth:
         """Test token refresh with HTTP error."""
         mock_response = mock_error_response(400, "Invalid client credentials")
 
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.post.return_value = mock_response
@@ -114,7 +116,7 @@ class TestLightcastAuth:
     @pytest.mark.asyncio
     async def test_refresh_token_network_error(self, auth_instance):
         """Test token refresh with network error."""
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.post.side_effect = httpx.RequestError("Network error")
@@ -135,19 +137,21 @@ class TestLightcastAuth:
         assert token == "cached_token"
 
     @pytest.mark.asyncio
-    async def test_get_access_token_refresh_needed(self, auth_instance, mock_successful_response):
+    async def test_get_access_token_refresh_needed(
+        self, auth_instance, mock_successful_response
+    ):
         """Test getting access token when refresh is needed."""
         auth_instance._token = None
 
         token_response_data = {
             "access_token": "refreshed_token",
             "token_type": "Bearer",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
         mock_response = mock_successful_response(token_response_data)
 
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.post.return_value = mock_response
@@ -161,12 +165,12 @@ class TestLightcastAuth:
         token_response_data = {
             "access_token": "test_auth_token",
             "token_type": "Bearer",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
         mock_response = mock_successful_response(token_response_data)
 
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.post.return_value = mock_response
@@ -175,29 +179,32 @@ class TestLightcastAuth:
 
             expected_headers = {
                 "Authorization": "Bearer test_auth_token",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
 
             assert headers == expected_headers
 
     @pytest.mark.asyncio
-    async def test_concurrent_token_refresh(self, auth_instance, mock_successful_response):
+    async def test_concurrent_token_refresh(
+        self, auth_instance, mock_successful_response
+    ):
         """Test that concurrent requests for tokens don't cause multiple refreshes."""
         token_response_data = {
             "access_token": "concurrent_token",
             "token_type": "Bearer",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
         mock_response = mock_successful_response(token_response_data)
 
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.post.return_value = mock_response
 
             # Make multiple concurrent requests
             import asyncio
+
             tasks = [auth_instance.get_access_token() for _ in range(5)]
             tokens = await asyncio.gather(*tasks)
 

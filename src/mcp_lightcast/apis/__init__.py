@@ -19,5 +19,5 @@ __all__ = [
     "SimilarityAPIClient",
     "OccupationBenchmarkAPIClient",
     "CareerPathwaysAPIClient",
-    "JobPostingsAPIClient"
+    "JobPostingsAPIClient",
 ]

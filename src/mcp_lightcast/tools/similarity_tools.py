@@ -4,9 +4,9 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from ..apis.similarity import SimilarityAPIClient
-from ..apis.occupation_benchmark import OccupationBenchmarkAPIClient
 from ..apis.career_pathways import CareerPathwaysAPIClient
+from ..apis.occupation_benchmark import OccupationBenchmarkAPIClient
+from ..apis.similarity import SimilarityAPIClient
 
 
 def register_similarity_tools(mcp: FastMCP):
@@ -16,7 +16,7 @@ def register_similarity_tools(mcp: FastMCP):
     async def get_similarity_metadata() -> dict[str, Any]:
         """
         Get Similarity API metadata and capabilities.
-        
+
         Returns:
             Similarity API metadata and available models
         """
@@ -27,7 +27,7 @@ def register_similarity_tools(mcp: FastMCP):
     async def get_benchmark_metadata() -> dict[str, Any]:
         """
         Get Occupation Benchmark API metadata and capabilities.
-        
+
         Returns:
             Benchmark API metadata and available metrics
         """
@@ -38,7 +38,7 @@ def register_similarity_tools(mcp: FastMCP):
     async def get_pathways_metadata() -> dict[str, Any]:
         """
         Get Career Pathways API metadata and capabilities.
-        
+
         Returns:
             Career Pathways API metadata and available dimensions
         """

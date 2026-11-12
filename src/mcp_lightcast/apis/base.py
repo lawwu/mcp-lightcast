@@ -1,7 +1,6 @@
 """Base API client for Lightcast APIs."""
 
 import sys
-from abc import ABC
 from pathlib import Path
 from typing import Any
 
@@ -22,8 +21,13 @@ except ImportError:
 
         client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
         client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
-        base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
-        oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
+        base_url: str = Field(
+            default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL"
+        )
+        oauth_url: str = Field(
+            default="https://auth.emsicloud.com/connect/token",
+            alias="LIGHTCAST_OAUTH_URL",
+        )
         oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
 
     lightcast_config = LightcastConfig()
@@ -34,7 +38,12 @@ from ..auth.oauth import AuthenticationError, lightcast_auth
 class APIError(Exception):
     """Exception raised for API errors."""
 
-    def __init__(self, message: str, status_code: int | None = None, response_data: dict | None = None):
+    def __init__(
+        self,
+        message: str,
+        status_code: int | None = None,
+        response_data: dict | None = None,
+    ):
         self.message = message
         self.status_code = status_code
         self.response_data = response_data
@@ -43,10 +52,11 @@ class APIError(Exception):
 
 class RateLimitError(APIError):
     """Exception raised when rate limit is exceeded."""
+
     pass
 
 
-class BaseLightcastClient(ABC):
+class BaseLightcastClient:
     """Base client for Lightcast API interactions."""
 
     # API-specific OAuth scopes for premium APIs
@@ -57,7 +67,7 @@ class BaseLightcastClient(ABC):
         "similarity": "similarity",
         "occupation_benchmark": "occupation-benchmark",
         "career_pathways": "career-pathways",
-        "job_postings": "postings:us"
+        "job_postings": "postings:us",
     }
 
     # Correct base URLs for different APIs based on reference implementation
@@ -68,7 +78,7 @@ class BaseLightcastClient(ABC):
         "similarity": "https://emsiservices.com/similarity",
         "occupation_benchmark": "https://emsiservices.com/occupation-benchmark",
         "career_pathways": "https://emsiservices.com/career-pathways",
-        "job_postings": "https://emsiservices.com/jpa"
+        "job_postings": "https://emsiservices.com/jpa",
     }
 
     def __init__(self, api_name: str | None = None):
@@ -87,7 +97,7 @@ class BaseLightcastClient(ABC):
 
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(30.0),
-            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100)
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
         )
 
     async def __aenter__(self):
@@ -102,7 +112,7 @@ class BaseLightcastClient(ABC):
         endpoint: str,
         data: dict | str | None = None,
         params: dict[str, Any] | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> dict[str, Any]:
         """Make an authenticated request to the Lightcast API."""
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
@@ -131,7 +141,7 @@ class BaseLightcastClient(ABC):
                 json=json_data,
                 content=content,
                 params=params,
-                headers=headers
+                headers=headers,
             )
 
             # Handle rate limiting
@@ -140,7 +150,7 @@ class BaseLightcastClient(ABC):
                 raise RateLimitError(
                     f"Rate limit exceeded. Reset at: {rate_limit_reset}",
                     status_code=429,
-                    response_data={"reset_time": rate_limit_reset}
+                    response_data={"reset_time": rate_limit_reset},
                 )
 
             response.raise_for_status()
@@ -155,14 +165,20 @@ class BaseLightcastClient(ABC):
         except httpx.HTTPStatusError as e:
             error_data = None
             try:
-                error_data = e.response.json() if e.response.headers.get("content-type", "").startswith("application/json") else {"error": e.response.text}
+                error_data = (
+                    e.response.json()
+                    if e.response.headers.get("content-type", "").startswith(
+                        "application/json"
+                    )
+                    else {"error": e.response.text}
+                )
             except Exception:
                 error_data = {"error": str(e)}
 
             raise APIError(
                 f"API request failed: {e.response.status_code} {e.response.reason_phrase}",
                 status_code=e.response.status_code,
-                response_data=error_data
+                response_data=error_data,
             ) from e
         except AuthenticationError:
             raise
@@ -171,18 +187,46 @@ class BaseLightcastClient(ABC):
         except Exception as e:
             raise APIError(f"Request failed: {str(e)}") from e
 
-    async def get(self, endpoint: str, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
+    async def get(
+        self,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        version: str = "2023.4",
+    ) -> dict[str, Any]:
         """Make a GET request."""
         return await self._make_request("GET", endpoint, params=params, version=version)
 
-    async def post(self, endpoint: str, data: dict | str | None = None, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
+    async def post(
+        self,
+        endpoint: str,
+        data: dict | str | None = None,
+        params: dict[str, Any] | None = None,
+        version: str = "2023.4",
+    ) -> dict[str, Any]:
         """Make a POST request."""
-        return await self._make_request("POST", endpoint, data=data, params=params, version=version)
+        return await self._make_request(
+            "POST", endpoint, data=data, params=params, version=version
+        )
 
-    async def put(self, endpoint: str, data: dict | str | None = None, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
+    async def put(
+        self,
+        endpoint: str,
+        data: dict | str | None = None,
+        params: dict[str, Any] | None = None,
+        version: str = "2023.4",
+    ) -> dict[str, Any]:
         """Make a PUT request."""
-        return await self._make_request("PUT", endpoint, data=data, params=params, version=version)
+        return await self._make_request(
+            "PUT", endpoint, data=data, params=params, version=version
+        )
 
-    async def delete(self, endpoint: str, params: dict[str, Any] | None = None, version: str = "2023.4") -> dict[str, Any]:
+    async def delete(
+        self,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        version: str = "2023.4",
+    ) -> dict[str, Any]:
         """Make a DELETE request."""
-        return await self._make_request("DELETE", endpoint, params=params, version=version)
+        return await self._make_request(
+            "DELETE", endpoint, params=params, version=version
+        )

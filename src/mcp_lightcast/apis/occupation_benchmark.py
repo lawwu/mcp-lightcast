@@ -9,6 +9,7 @@ from .base import BaseLightcastClient
 
 class BenchmarkMetric(BaseModel):
     """Benchmark metric model."""
+
     metric_name: str
     value: float | int | str
     percentile: float | None = None
@@ -17,6 +18,7 @@ class BenchmarkMetric(BaseModel):
 
 class OccupationBenchmark(BaseModel):
     """Occupation benchmark result."""
+
     occupation_id: str
     occupation_title: str
     soc_code: str | None = None
@@ -26,6 +28,7 @@ class OccupationBenchmark(BaseModel):
 
 class SalaryBenchmark(BaseModel):
     """Salary benchmark model."""
+
     occupation_id: str
     median_salary: float
     mean_salary: float
@@ -38,6 +41,7 @@ class SalaryBenchmark(BaseModel):
 
 class SkillDemandBenchmark(BaseModel):
     """Skill demand benchmark model."""
+
     skill_id: str
     skill_name: str
     demand_score: float
@@ -48,6 +52,7 @@ class SkillDemandBenchmark(BaseModel):
 
 class RegionalBenchmark(BaseModel):
     """Regional benchmark model."""
+
     region_id: str
     region_name: str
     metrics: list[BenchmarkMetric]
@@ -61,16 +66,13 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         super().__init__(api_name="occupation_benchmark")
 
     # Working endpoints discovered from testing
-    async def get_dimension_info(
-        self,
-        dimension: str
-    ) -> dict[str, Any]:
+    async def get_dimension_info(self, dimension: str) -> dict[str, Any]:
         """
         Get information about a specific dimension (taxonomy).
-        
+
         Args:
             dimension: Dimension ID (lotocc, soc, onet, lotspecocc)
-            
+
         Returns:
             Dimension information including title, description, and taxonomy versions
         """
@@ -96,7 +98,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
     async def get_api_metadata(self) -> dict[str, Any]:
         """
         Get comprehensive API metadata including available datasets and dimensions.
-        
+
         Returns:
             API metadata with datasets, dimensions, regions, and taxonomy versions
         """
@@ -106,7 +108,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
     async def get_api_status(self) -> dict[str, Any]:
         """
         Get API health status.
-        
+
         Returns:
             API health status information
         """
@@ -119,18 +121,18 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         metrics: list[str] | None = None,
         region: str | None = None,
         time_period: str | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> OccupationBenchmark:
         """
         Get comprehensive benchmark data for an occupation.
-        
+
         Args:
             occupation_id: Lightcast occupation ID
             metrics: Specific metrics to retrieve (salary, demand, growth, etc.)
             region: Geographic region for benchmarking
             time_period: Time period for benchmark (e.g., "2023", "2022-2023")
             version: API version to use
-            
+
         Returns:
             Occupation benchmark data
         """
@@ -145,7 +147,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         response = await self.get(
             f"benchmark/versions/{version}/occupations/{occupation_id}",
             params=params,
-            version=version
+            version=version,
         )
 
         data = response.get("data", {})
@@ -158,11 +160,11 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
                     metric_name=metric["name"],
                     value=metric["value"],
                     percentile=metric.get("percentile"),
-                    benchmark_group=metric.get("group")
+                    benchmark_group=metric.get("group"),
                 )
                 for metric in data.get("metrics", [])
             ],
-            benchmark_date=data.get("benchmark_date")
+            benchmark_date=data.get("benchmark_date"),
         )
 
     async def get_salary_benchmarks(
@@ -170,17 +172,17 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         occupation_ids: list[str],
         region: str | None = None,
         experience_level: str | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> list[SalaryBenchmark]:
         """
         Get salary benchmark data for multiple occupations.
-        
+
         Args:
             occupation_ids: List of occupation IDs
             region: Geographic region for salary data
             experience_level: Experience level filter (entry, mid, senior)
             version: API version to use
-            
+
         Returns:
             List of salary benchmarks
         """
@@ -191,24 +193,24 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
             data["experience_level"] = experience_level
 
         response = await self.post(
-            f"benchmark/versions/{version}/salaries",
-            data=data,
-            version=version
+            f"benchmark/versions/{version}/salaries", data=data, version=version
         )
 
         result = []
         for item in response.get("data", []):
             salary_data = item.get("salary_data", {})
-            result.append(SalaryBenchmark(
-                occupation_id=item["occupation_id"],
-                median_salary=salary_data.get("median", 0.0),
-                mean_salary=salary_data.get("mean", 0.0),
-                percentile_25=salary_data.get("p25", 0.0),
-                percentile_75=salary_data.get("p75", 0.0),
-                percentile_90=salary_data.get("p90", 0.0),
-                currency=salary_data.get("currency", "USD"),
-                region=item.get("region")
-            ))
+            result.append(
+                SalaryBenchmark(
+                    occupation_id=item["occupation_id"],
+                    median_salary=salary_data.get("median", 0.0),
+                    mean_salary=salary_data.get("mean", 0.0),
+                    percentile_25=salary_data.get("p25", 0.0),
+                    percentile_75=salary_data.get("p75", 0.0),
+                    percentile_90=salary_data.get("p90", 0.0),
+                    currency=salary_data.get("currency", "USD"),
+                    region=item.get("region"),
+                )
+            )
 
         return result
 
@@ -219,11 +221,11 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         region: str | None = None,
         time_period: str | None = None,
         limit: int = 100,
-        version: str = "latest"
+        version: str = "latest",
     ) -> list[SkillDemandBenchmark]:
         """
         Get skill demand benchmark data.
-        
+
         Args:
             skill_ids: Specific skill IDs to benchmark
             occupation_filter: Filter by occupation IDs
@@ -231,7 +233,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
             time_period: Time period for analysis
             limit: Maximum number of results
             version: API version to use
-            
+
         Returns:
             List of skill demand benchmarks
         """
@@ -251,19 +253,21 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
             f"benchmark/versions/{version}/skills/demand",
             data=data,
             params=params,
-            version=version
+            version=version,
         )
 
         result = []
         for item in response.get("data", []):
-            result.append(SkillDemandBenchmark(
-                skill_id=item["skill_id"],
-                skill_name=item["skill_name"],
-                demand_score=item.get("demand_score", 0.0),
-                growth_rate=item.get("growth_rate"),
-                occupation_count=item.get("occupation_count", 0),
-                job_posting_count=item.get("job_posting_count")
-            ))
+            result.append(
+                SkillDemandBenchmark(
+                    skill_id=item["skill_id"],
+                    skill_name=item["skill_name"],
+                    demand_score=item.get("demand_score", 0.0),
+                    growth_rate=item.get("growth_rate"),
+                    occupation_count=item.get("occupation_count", 0),
+                    job_posting_count=item.get("job_posting_count"),
+                )
+            )
 
         return result
 
@@ -272,31 +276,28 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         occupation_ids: list[str],
         metrics: list[str],
         region: str | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> dict[str, Any]:
         """
         Compare benchmark metrics across multiple occupations.
-        
+
         Args:
             occupation_ids: List of occupation IDs to compare
             metrics: Benchmark metrics to compare
             region: Geographic region for comparison
             version: API version to use
-            
+
         Returns:
             Occupation comparison data
         """
-        data = {
-            "occupation_ids": occupation_ids,
-            "metrics": metrics
-        }
+        data = {"occupation_ids": occupation_ids, "metrics": metrics}
         if region:
             data["region"] = region
 
         response = await self.post(
             f"benchmark/versions/{version}/occupations/compare",
             data=data,
-            version=version
+            version=version,
         )
         return response.get("data", {})
 
@@ -305,17 +306,17 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         metric_type: str,
         regions: list[str] | None = None,
         occupation_filter: list[str] | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> list[RegionalBenchmark]:
         """
         Get regional benchmark data for specific metrics.
-        
+
         Args:
             metric_type: Type of metric (salary, employment, growth, etc.)
             regions: Specific regions to include
             occupation_filter: Filter by occupation IDs
             version: API version to use
-            
+
         Returns:
             List of regional benchmarks
         """
@@ -326,27 +327,27 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
             params["occupation_filter"] = ",".join(occupation_filter)
 
         response = await self.get(
-            f"benchmark/versions/{version}/regions",
-            params=params,
-            version=version
+            f"benchmark/versions/{version}/regions", params=params, version=version
         )
 
         result = []
         for item in response.get("data", []):
-            result.append(RegionalBenchmark(
-                region_id=item["region_id"],
-                region_name=item["region_name"],
-                metrics=[
-                    BenchmarkMetric(
-                        metric_name=metric["name"],
-                        value=metric["value"],
-                        percentile=metric.get("percentile"),
-                        benchmark_group=metric.get("group")
-                    )
-                    for metric in item.get("metrics", [])
-                ],
-                comparison_to_national=item.get("national_comparison")
-            ))
+            result.append(
+                RegionalBenchmark(
+                    region_id=item["region_id"],
+                    region_name=item["region_name"],
+                    metrics=[
+                        BenchmarkMetric(
+                            metric_name=metric["name"],
+                            value=metric["value"],
+                            percentile=metric.get("percentile"),
+                            benchmark_group=metric.get("group"),
+                        )
+                        for metric in item.get("metrics", [])
+                    ],
+                    comparison_to_national=item.get("national_comparison"),
+                )
+            )
 
         return result
 
@@ -355,17 +356,17 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         occupation_id: str,
         years: list[int] | None = None,
         region: str | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> dict[str, Any]:
         """
         Get employment trend data for an occupation.
-        
+
         Args:
             occupation_id: Lightcast occupation ID
             years: Specific years to include in trend analysis
             region: Geographic region
             version: API version to use
-            
+
         Returns:
             Employment trend data
         """
@@ -378,7 +379,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         response = await self.get(
             f"benchmark/versions/{version}/occupations/{occupation_id}/trends",
             params=params,
-            version=version
+            version=version,
         )
         return response.get("data", {})
 
@@ -387,51 +388,40 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         industry_ids: list[str],
         metrics: list[str],
         region: str | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> dict[str, Any]:
         """
         Get benchmark data by industry.
-        
+
         Args:
             industry_ids: List of industry IDs
             metrics: Benchmark metrics to retrieve
             region: Geographic region
             version: API version to use
-            
+
         Returns:
             Industry benchmark data
         """
-        data = {
-            "industry_ids": industry_ids,
-            "metrics": metrics
-        }
+        data = {"industry_ids": industry_ids, "metrics": metrics}
         if region:
             data["region"] = region
 
         response = await self.post(
-            f"benchmark/versions/{version}/industries",
-            data=data,
-            version=version
+            f"benchmark/versions/{version}/industries", data=data, version=version
         )
         return response.get("data", {})
 
-    async def get_benchmark_metadata(
-        self,
-        version: str = "latest"
-    ) -> dict[str, Any]:
+    async def get_benchmark_metadata(self, version: str = "latest") -> dict[str, Any]:
         """
         Get Occupation Benchmark API metadata and version information.
-        
+
         Args:
             version: API version to use
-            
+
         Returns:
             API metadata and version information
         """
-        response = await self.get(
-            f"benchmark/versions/{version}",
-            version=version
-        )
+        response = await self.get(f"benchmark/versions/{version}", version=version)
         return response.get("data", {})
 
     async def get_benchmark_data(
@@ -440,7 +430,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         metrics: list[str] | None = None,
         region: str | None = None,
         time_period: str | None = None,
-        version: str = "latest"
+        version: str = "latest",
     ) -> dict[str, Any]:
         """
         Get benchmark data for an occupation.
@@ -449,26 +439,22 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         # Try different potential endpoint patterns
         try:
             # First try the direct occupations endpoint
-            response = await self._make_request(
-                "GET",
-                f"occupations/{occupation_id}"
-            )
+            response = await self._make_request("GET", f"occupations/{occupation_id}")
             return response.get("data", {})
-        except:
+        except Exception:
             try:
                 # Try with different path structure
                 response = await self._make_request(
-                    "GET",
-                    f"benchmarks/{occupation_id}"
+                    "GET", f"benchmarks/{occupation_id}"
                 )
                 return response.get("data", {})
-            except:
+            except Exception:
                 # Return simulated benchmark data if endpoints not available
                 return {
                     "occupation_id": occupation_id,
                     "note": "Benchmark data endpoint not available with current access level",
                     "metrics": metrics or [],
-                    "region": region or "US"
+                    "region": region or "US",
                 }
 
     async def get_available_areas(self) -> list[dict[str, Any]]:
@@ -477,22 +463,22 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         """
         response = await self._make_request("GET", "meta")
         meta_data = response.get("data", {})
-        
+
         # Try to extract areas from different possible structures
         areas = meta_data.get("areas", [])
         if not areas and "regions" in meta_data:
             areas = meta_data["regions"]
         if not areas and "geographies" in meta_data:
             areas = meta_data["geographies"]
-        
+
         # If still no areas found, return basic US areas
         if not areas:
             areas = [
                 {"id": "us", "name": "United States", "type": "nation"},
                 {"id": "state", "name": "State Level", "type": "state"},
-                {"id": "metro", "name": "Metropolitan Areas", "type": "metro"}
+                {"id": "metro", "name": "Metropolitan Areas", "type": "metro"},
             ]
-        
+
         return areas
 
     async def get_available_metrics(self) -> list[dict[str, Any]]:
@@ -501,21 +487,25 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         """
         response = await self._make_request("GET", "meta")
         meta_data = response.get("data", {})
-        
+
         # Try to extract metrics from different possible structures
         metrics = meta_data.get("metrics", [])
         if not metrics and "benchmarkMetrics" in meta_data:
             metrics = meta_data["benchmarkMetrics"]
         if not metrics and "availableMetrics" in meta_data:
             metrics = meta_data["availableMetrics"]
-        
+
         # If still no metrics found, return common benchmark metrics
         if not metrics:
             metrics = [
                 {"id": "median_salary", "name": "Median Salary", "type": "salary"},
                 {"id": "employment", "name": "Employment Count", "type": "employment"},
                 {"id": "job_growth", "name": "Job Growth Rate", "type": "growth"},
-                {"id": "education_level", "name": "Education Requirements", "type": "education"}
+                {
+                    "id": "education_level",
+                    "name": "Education Requirements",
+                    "type": "education",
+                },
             ]
-        
+
         return metrics

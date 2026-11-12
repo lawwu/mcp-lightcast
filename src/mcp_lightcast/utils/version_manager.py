@@ -20,13 +20,17 @@ class VersionManager:
         """Get the latest titles API version."""
         if self._latest_titles_version is None:
             await self._fetch_latest_versions()
-        return self._latest_titles_version or "5.47"  # Fallback to known working version
+        return (
+            self._latest_titles_version or "5.47"
+        )  # Fallback to known working version
 
     async def get_latest_skills_version(self) -> str:
         """Get the latest skills API version."""
         if self._latest_skills_version is None:
             await self._fetch_latest_versions()
-        return self._latest_skills_version or "9.33"  # Fallback to known working version
+        return (
+            self._latest_skills_version or "9.33"
+        )  # Fallback to known working version
 
     async def _fetch_latest_versions(self) -> None:
         """Fetch the latest API versions from Lightcast."""
@@ -37,8 +41,12 @@ class VersionManager:
                     titles_response = await client.get("titles/versions")
                     titles_versions = titles_response.get("data", [])
                     if titles_versions:
-                        self._latest_titles_version = titles_versions[0]  # First is latest
-                        logger.debug(f"Latest titles version: {self._latest_titles_version}")
+                        self._latest_titles_version = titles_versions[
+                            0
+                        ]  # First is latest
+                        logger.debug(
+                            f"Latest titles version: {self._latest_titles_version}"
+                        )
                 except Exception as e:
                     logger.warning(f"Failed to fetch titles versions: {e}")
 
@@ -47,8 +55,12 @@ class VersionManager:
                     skills_response = await client.get("skills/versions")
                     skills_versions = skills_response.get("data", [])
                     if skills_versions:
-                        self._latest_skills_version = skills_versions[0]  # First is latest
-                        logger.debug(f"Latest skills version: {self._latest_skills_version}")
+                        self._latest_skills_version = skills_versions[
+                            0
+                        ]  # First is latest
+                        logger.debug(
+                            f"Latest skills version: {self._latest_skills_version}"
+                        )
                 except Exception as e:
                     logger.warning(f"Failed to fetch skills versions: {e}")
 

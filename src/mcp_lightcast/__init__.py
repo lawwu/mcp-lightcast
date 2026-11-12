@@ -21,8 +21,8 @@ def setup_logging(level: str, quiet: bool = False):
     log_level = getattr(logging, level.upper(), logging.INFO)
     logging.basicConfig(
         level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
 
@@ -45,7 +45,8 @@ def setup_logging(level: str, quiet: bool = False):
     help="Set logging level (default: INFO)",
 )
 @click.option(
-    "--quiet", "-q",
+    "--quiet",
+    "-q",
     is_flag=True,
     help="Suppress all logging output",
 )
@@ -90,6 +91,7 @@ def main(
     # Validate configuration
     import sys
     from pathlib import Path
+
     # Add project root to path for config import
     project_root = Path(__file__).parent.parent.parent
     sys.path.insert(0, str(project_root))
@@ -99,22 +101,33 @@ def main(
         # Fallback configuration
         from pydantic import ConfigDict, Field
         from pydantic_settings import BaseSettings
+
         class LightcastConfig(BaseSettings):
             model_config = ConfigDict(extra="ignore")
             client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
             client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
-            base_url: str = Field(default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL")
-            oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
+            base_url: str = Field(
+                default="https://api.lightcast.io", alias="LIGHTCAST_BASE_URL"
+            )
+            oauth_url: str = Field(
+                default="https://auth.emsicloud.com/connect/token",
+                alias="LIGHTCAST_OAUTH_URL",
+            )
             oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
             rate_limit_per_hour: int = Field(default=1000, alias="LIGHTCAST_RATE_LIMIT")
+
         lightcast_config = LightcastConfig()
 
     if not lightcast_config.client_id or not lightcast_config.client_secret:
         click.echo("❌ Error: Missing required environment variables:", err=True)
         click.echo("   - LIGHTCAST_CLIENT_ID", err=True)
         click.echo("   - LIGHTCAST_CLIENT_SECRET", err=True)
-        click.echo("\nPlease set these variables in your .env file or environment.", err=True)
-        click.echo("See .env.example for the complete list of configuration options.", err=True)
+        click.echo(
+            "\nPlease set these variables in your .env file or environment.", err=True
+        )
+        click.echo(
+            "See .env.example for the complete list of configuration options.", err=True
+        )
         raise click.ClickException("Missing required configuration")
 
     if validate_config:
@@ -162,10 +175,12 @@ def main(
         if transport.lower() == "stdio":
             # Import here to avoid circular dependency
             from .server import mcp as server_instance
+
             server_instance.run()
         elif transport.lower() == "streamable-http":
             # Import here to avoid circular dependency
             from .server import mcp as server_instance
+
             server_instance.run(transport="streamable-http", port=port)
         else:
             raise click.ClickException(f"Transport '{transport}' not yet implemented")

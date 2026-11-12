@@ -19,6 +19,7 @@ sys.path.insert(0, str(project_root))
 # Load environment variables from .env file if it exists
 try:
     from dotenv import load_dotenv
+
     env_file = project_root / ".env"
     if env_file.exists():
         load_dotenv(env_file)
@@ -28,18 +29,21 @@ try:
 except ImportError:
     print("⚠️  python-dotenv not available - relying on environment variables")
 
+from src.mcp_lightcast.apis.career_pathways import CareerPathwaysAPIClient
+from src.mcp_lightcast.apis.classification import ClassificationAPIClient
+from src.mcp_lightcast.apis.job_postings import JobPostingsAPIClient
+from src.mcp_lightcast.apis.occupation_benchmark import OccupationBenchmarkAPIClient
+from src.mcp_lightcast.apis.similarity import SimilarityAPIClient
 from src.mcp_lightcast.apis.skills import SkillsAPIClient
 from src.mcp_lightcast.apis.titles import TitlesAPIClient
-from src.mcp_lightcast.apis.classification import ClassificationAPIClient
-from src.mcp_lightcast.apis.similarity import SimilarityAPIClient
-from src.mcp_lightcast.apis.occupation_benchmark import OccupationBenchmarkAPIClient
-from src.mcp_lightcast.apis.career_pathways import CareerPathwaysAPIClient
-from src.mcp_lightcast.apis.job_postings import JobPostingsAPIClient
-from src.mcp_lightcast.tools.normalize_title_get_skills import TitleNormalizationWorkflow
+from src.mcp_lightcast.tools.normalize_title_get_skills import (
+    TitleNormalizationWorkflow,
+)
 
 
 class APITestResult:
     """Track test results."""
+
     def __init__(self, api_name: str):
         self.api_name = api_name
         self.passed = 0
@@ -64,7 +68,9 @@ class APITestResult:
         total = self.passed + self.failed + self.expected_failures
         actual_failures = self.failed
         status = "✅" if actual_failures == 0 else "❌"
-        print(f"\n{status} {self.api_name}: {self.passed}/{total} tests passed ({self.expected_failures} expected failures)")
+        print(
+            f"\n{status} {self.api_name}: {self.passed}/{total} tests passed ({self.expected_failures} expected failures)"
+        )
         if self.errors:
             print("  Unexpected Errors:")
             for test_name, error in self.errors:
@@ -73,17 +79,17 @@ class APITestResult:
 
 class ManualAPITester:
     """Manual API testing suite."""
-    
+
     def __init__(self):
         self.results = {}
-        
+
     def check_credentials(self) -> bool:
         """Check if API credentials are configured."""
         client_id = os.getenv("LIGHTCAST_CLIENT_ID")
         client_secret = os.getenv("LIGHTCAST_CLIENT_SECRET")
-        
+
         print("🔑 Checking API credentials...")
-        
+
         if not client_id or not client_secret:
             print("❌ Missing API credentials!")
             print("\nPlease configure your Lightcast API credentials:")
@@ -96,16 +102,16 @@ class ManualAPITester:
             print("   export LIGHTCAST_CLIENT_ID=your_client_id_here")
             print("   export LIGHTCAST_CLIENT_SECRET=your_client_secret_here")
             return False
-            
+
         print(f"✅ LIGHTCAST_CLIENT_ID: {client_id[:10]}...")
-        print(f"✅ LIGHTCAST_CLIENT_SECRET: [configured]")
+        print("✅ LIGHTCAST_CLIENT_SECRET: [configured]")
         return True
 
     async def test_skills_api(self) -> APITestResult:
         """Test Skills API endpoints."""
         result = APITestResult("Skills API")
         client = SkillsAPIClient()
-        
+
         try:
             async with client:
                 # Test search skills
@@ -119,13 +125,17 @@ class ManualAPITester:
                     result.fail_test("search_skills", str(e))
 
                 # Test get skill by ID (use first skill from search)
-                if hasattr(skills, '__len__') and len(skills) > 0:
+                if hasattr(skills, "__len__") and len(skills) > 0:
                     try:
                         skill_detail = await client.get_skill_by_id(skills[0].id)
                         if skill_detail.name:
-                            result.pass_test(f"get_skill_by_id - Got {skill_detail.name}")
+                            result.pass_test(
+                                f"get_skill_by_id - Got {skill_detail.name}"
+                            )
                         else:
-                            result.fail_test("get_skill_by_id", "No skill name returned")
+                            result.fail_test(
+                                "get_skill_by_id", "No skill name returned"
+                            )
                     except Exception as e:
                         result.fail_test("get_skill_by_id", str(e))
 
@@ -140,27 +150,32 @@ class ManualAPITester:
                     result.fail_test("get_skills_metadata", str(e))
 
                 # Test bulk retrieve skills
-                if hasattr(skills, '__len__') and len(skills) >= 2:
+                if hasattr(skills, "__len__") and len(skills) >= 2:
                     try:
                         skill_ids = [skills[0].id, skills[1].id]
                         bulk_skills = await client.bulk_retrieve_skills(skill_ids)
                         if bulk_skills and len(bulk_skills) >= 2:
-                            result.pass_test(f"bulk_retrieve_skills - Got {len(bulk_skills)} skills")
+                            result.pass_test(
+                                f"bulk_retrieve_skills - Got {len(bulk_skills)} skills"
+                            )
                         else:
-                            result.fail_test("bulk_retrieve_skills", f"Expected 2+ skills, got {len(bulk_skills) if bulk_skills else 0}")
+                            result.fail_test(
+                                "bulk_retrieve_skills",
+                                f"Expected 2+ skills, got {len(bulk_skills) if bulk_skills else 0}",
+                            )
                     except Exception as e:
                         result.fail_test("bulk_retrieve_skills", str(e))
 
         except Exception as e:
             result.fail_test("API setup", str(e))
-            
+
         return result
 
     async def test_titles_api(self) -> APITestResult:
         """Test Titles API endpoints."""
         result = APITestResult("Titles API")
         client = TitlesAPIClient()
-        
+
         try:
             async with client:
                 # Test search titles
@@ -174,13 +189,17 @@ class ManualAPITester:
                     result.fail_test("search_titles", str(e))
 
                 # Test get title by ID
-                if hasattr(titles, '__len__') and len(titles) > 0:
+                if hasattr(titles, "__len__") and len(titles) > 0:
                     try:
                         title_detail = await client.get_title_by_id(titles[0].id)
                         if title_detail.name:
-                            result.pass_test(f"get_title_by_id - Got {title_detail.name}")
+                            result.pass_test(
+                                f"get_title_by_id - Got {title_detail.name}"
+                            )
                         else:
-                            result.fail_test("get_title_by_id", "No title name returned")
+                            result.fail_test(
+                                "get_title_by_id", "No title name returned"
+                            )
                     except Exception as e:
                         result.fail_test("get_title_by_id", str(e))
 
@@ -195,13 +214,15 @@ class ManualAPITester:
                     result.fail_test("normalize_title", str(e))
 
                 # Test get title hierarchy
-                if hasattr(titles, '__len__') and len(titles) > 0:
+                if hasattr(titles, "__len__") and len(titles) > 0:
                     try:
                         hierarchy = await client.get_title_hierarchy(titles[0].id)
                         if hierarchy:
                             result.pass_test("get_title_hierarchy - Got hierarchy")
                         else:
-                            result.fail_test("get_title_hierarchy", "No hierarchy returned")
+                            result.fail_test(
+                                "get_title_hierarchy", "No hierarchy returned"
+                            )
                     except Exception as e:
                         result.fail_test("get_title_hierarchy", str(e))
 
@@ -217,14 +238,14 @@ class ManualAPITester:
 
         except Exception as e:
             result.fail_test("API setup", str(e))
-            
+
         return result
 
     async def test_classification_api(self) -> APITestResult:
         """Test Classification API endpoints."""
         result = APITestResult("Classification API")
         client = ClassificationAPIClient()
-        
+
         try:
             async with client:
                 # Test extract skills from text
@@ -232,10 +253,17 @@ class ManualAPITester:
                     extraction_result = await client.extract_skills_from_text(
                         "I have experience with Python programming, machine learning, and data analysis"
                     )
-                    if extraction_result.concepts and len(extraction_result.concepts) > 0:
-                        result.pass_test(f"extract_skills_from_text - Found {len(extraction_result.concepts)} skills")
+                    if (
+                        extraction_result.concepts
+                        and len(extraction_result.concepts) > 0
+                    ):
+                        result.pass_test(
+                            f"extract_skills_from_text - Found {len(extraction_result.concepts)} skills"
+                        )
                     else:
-                        result.fail_test("extract_skills_from_text", "No skills extracted")
+                        result.fail_test(
+                            "extract_skills_from_text", "No skills extracted"
+                        )
                 except Exception as e:
                     result.fail_test("extract_skills_from_text", str(e))
 
@@ -243,9 +271,13 @@ class ManualAPITester:
                 try:
                     versions = await client.get_available_versions()
                     if versions and len(versions) > 0:
-                        result.pass_test(f"get_available_versions - Found {len(versions)} versions")
+                        result.pass_test(
+                            f"get_available_versions - Found {len(versions)} versions"
+                        )
                     else:
-                        result.fail_test("get_available_versions", "No versions returned")
+                        result.fail_test(
+                            "get_available_versions", "No versions returned"
+                        )
                 except Exception as e:
                     result.fail_test("get_available_versions", str(e))
 
@@ -261,7 +293,9 @@ class ManualAPITester:
 
                 # Test normalize skill
                 try:
-                    normalized_skill = await client.normalize_skill("python programming")
+                    normalized_skill = await client.normalize_skill(
+                        "python programming"
+                    )
                     if normalized_skill:
                         result.pass_test("normalize_skill - Got normalization result")
                     else:
@@ -281,58 +315,76 @@ class ManualAPITester:
 
         except Exception as e:
             result.fail_test("API setup", str(e))
-            
+
         return result
 
     async def test_similarity_api(self) -> APITestResult:
         """Test Similarity API endpoints."""
         result = APITestResult("Similarity API")
         client = SimilarityAPIClient()
-        
+
         try:
             async with client:
                 # Test get occupation skills
                 try:
-                    occ_skills = await client.get_occupation_skills("15-1252.00", limit=10)
+                    occ_skills = await client.get_occupation_skills(
+                        "15-1252.00", limit=10
+                    )
                     if occ_skills and occ_skills.skills:
-                        result.pass_test(f"get_occupation_skills - Found {len(occ_skills.skills)} skills")
+                        result.pass_test(
+                            f"get_occupation_skills - Found {len(occ_skills.skills)} skills"
+                        )
                     else:
                         # API call succeeded but returned no data - this is acceptable
-                        result.pass_test("get_occupation_skills - API working (no skills data available for test occupation)")
+                        result.pass_test(
+                            "get_occupation_skills - API working (no skills data available for test occupation)"
+                        )
                 except Exception as e:
                     result.fail_test("get_occupation_skills", str(e))
 
                 # Test get similar occupations
                 try:
-                    similar_occs = await client.get_similar_occupations("15-1252.00", limit=5)
+                    similar_occs = await client.get_similar_occupations(
+                        "15-1252.00", limit=5
+                    )
                     if similar_occs and len(similar_occs) > 0:
-                        result.pass_test(f"get_similar_occupations - Found {len(similar_occs)} similar occupations")
+                        result.pass_test(
+                            f"get_similar_occupations - Found {len(similar_occs)} similar occupations"
+                        )
                     else:
                         # API call succeeded but returned no data - this is acceptable
-                        result.pass_test("get_similar_occupations - API working (no similarity data available for test occupation)")
+                        result.pass_test(
+                            "get_similar_occupations - API working (no similarity data available for test occupation)"
+                        )
                 except Exception as e:
                     result.fail_test("get_similar_occupations", str(e))
 
                 # Test get similar skills
                 try:
-                    similar_skills = await client.get_similar_skills("KS1200364C9C1LK3V5Q1", limit=5)  # Python skill ID
+                    similar_skills = await client.get_similar_skills(
+                        "KS1200364C9C1LK3V5Q1", limit=5
+                    )  # Python skill ID
                     if similar_skills and len(similar_skills) > 0:
-                        result.pass_test(f"get_similar_skills - Found {len(similar_skills)} similar skills")
+                        result.pass_test(
+                            f"get_similar_skills - Found {len(similar_skills)} similar skills"
+                        )
                     else:
-                        result.fail_test("get_similar_skills", "No similar skills returned")
+                        result.fail_test(
+                            "get_similar_skills", "No similar skills returned"
+                        )
                 except Exception as e:
                     result.fail_test("get_similar_skills", str(e))
 
         except Exception as e:
             result.fail_test("API setup", str(e))
-            
+
         return result
 
     async def test_occupation_benchmark_api(self) -> APITestResult:
         """Test Occupation Benchmark API endpoints."""
         result = APITestResult("Occupation Benchmark API")
         client = OccupationBenchmarkAPIClient()
-        
+
         try:
             async with client:
                 # Test get benchmark data
@@ -340,12 +392,14 @@ class ManualAPITester:
                     benchmark = await client.get_benchmark_data(
                         occupation_id="15-1252.00",  # Software Developers
                         region="US",
-                        metrics=["median_salary", "employment"]
+                        metrics=["median_salary", "employment"],
                     )
                     if benchmark:
                         result.pass_test("get_benchmark_data - Got benchmark data")
                     else:
-                        result.fail_test("get_benchmark_data", "No benchmark data returned")
+                        result.fail_test(
+                            "get_benchmark_data", "No benchmark data returned"
+                        )
                 except Exception as e:
                     result.fail_test("get_benchmark_data", str(e))
 
@@ -353,7 +407,9 @@ class ManualAPITester:
                 try:
                     areas = await client.get_available_areas()
                     if areas and len(areas) > 0:
-                        result.pass_test(f"get_available_areas - Found {len(areas)} areas")
+                        result.pass_test(
+                            f"get_available_areas - Found {len(areas)} areas"
+                        )
                     else:
                         result.fail_test("get_available_areas", "No areas returned")
                 except Exception as e:
@@ -363,7 +419,9 @@ class ManualAPITester:
                 try:
                     metrics = await client.get_available_metrics()
                     if metrics and len(metrics) > 0:
-                        result.pass_test(f"get_available_metrics - Found {len(metrics)} metrics")
+                        result.pass_test(
+                            f"get_available_metrics - Found {len(metrics)} metrics"
+                        )
                     else:
                         result.fail_test("get_available_metrics", "No metrics returned")
                 except Exception as e:
@@ -371,23 +429,27 @@ class ManualAPITester:
 
         except Exception as e:
             result.fail_test("API setup", str(e))
-            
+
         return result
 
     async def test_career_pathways_api(self) -> APITestResult:
         """Test Career Pathways API endpoints."""
         result = APITestResult("Career Pathways API")
         client = CareerPathwaysAPIClient()
-        
+
         try:
             async with client:
                 # Test get available dimensions
                 try:
                     dimensions = await client.get_available_dimensions()
                     if dimensions and len(dimensions) > 0:
-                        result.pass_test(f"get_available_dimensions - Found {len(dimensions)} dimensions")
+                        result.pass_test(
+                            f"get_available_dimensions - Found {len(dimensions)} dimensions"
+                        )
                     else:
-                        result.fail_test("get_available_dimensions", "No dimensions returned")
+                        result.fail_test(
+                            "get_available_dimensions", "No dimensions returned"
+                        )
                 except Exception as e:
                     result.fail_test("get_available_dimensions", str(e))
 
@@ -395,12 +457,14 @@ class ManualAPITester:
                 try:
                     pathway = await client.get_pathway_analysis(
                         from_occupation_id="15-1252.00",  # Software Developers
-                        to_occupation_id="15-1253.00",    # Software QA Analysts
+                        to_occupation_id="15-1253.00",  # Software QA Analysts
                     )
                     if pathway:
                         result.pass_test("get_pathway_analysis - Got pathway analysis")
                     else:
-                        result.fail_test("get_pathway_analysis", "No pathway analysis returned")
+                        result.fail_test(
+                            "get_pathway_analysis", "No pathway analysis returned"
+                        )
                 except Exception as e:
                     result.fail_test("get_pathway_analysis", str(e))
 
@@ -416,21 +480,20 @@ class ManualAPITester:
 
         except Exception as e:
             result.fail_test("API setup", str(e))
-            
+
         return result
 
     async def test_job_postings_api(self) -> APITestResult:
         """Test Job Postings API endpoints."""
         result = APITestResult("Job Postings API")
         client = JobPostingsAPIClient()
-        
+
         try:
             async with client:
                 # Test get postings summary
                 try:
                     summary = await client.get_postings_summary(
-                        occupation_ids=["15-1252.00"],
-                        location="US"
+                        occupation_ids=["15-1252.00"], location="US"
                     )
                     if summary:
                         result.pass_test("get_postings_summary - Got summary")
@@ -442,11 +505,12 @@ class ManualAPITester:
                 # Test get top skills
                 try:
                     top_skills = await client.get_top_skills(
-                        occupation_ids=["15-1252.00"],
-                        limit=10
+                        occupation_ids=["15-1252.00"], limit=10
                     )
                     if top_skills and len(top_skills) > 0:
-                        result.pass_test(f"get_top_skills - Found {len(top_skills)} skills")
+                        result.pass_test(
+                            f"get_top_skills - Found {len(top_skills)} skills"
+                        )
                     else:
                         result.fail_test("get_top_skills", "No top skills returned")
                 except Exception as e:
@@ -456,7 +520,9 @@ class ManualAPITester:
                 try:
                     facets = await client.get_available_facets()
                     if facets and len(facets) > 0:
-                        result.pass_test(f"get_available_facets - Found {len(facets)} facets")
+                        result.pass_test(
+                            f"get_available_facets - Found {len(facets)} facets"
+                        )
                     else:
                         result.fail_test("get_available_facets", "No facets returned")
                 except Exception as e:
@@ -464,13 +530,13 @@ class ManualAPITester:
 
         except Exception as e:
             result.fail_test("API setup", str(e))
-            
+
         return result
 
     async def test_workflow_integration(self) -> APITestResult:
         """Test the complete workflow integration."""
         result = APITestResult("Workflow Integration")
-        
+
         try:
             async with TitleNormalizationWorkflow() as workflow:
                 # Test complete workflow
@@ -478,45 +544,59 @@ class ManualAPITester:
                     workflow_result = await workflow.normalize_title_and_get_skills(
                         "senior software engineer",
                         max_occupations=3,
-                        max_skills_per_occupation=10
+                        max_skills_per_occupation=10,
                     )
                     if workflow_result.skills and len(workflow_result.skills) > 0:
-                        result.pass_test(f"normalize_title_and_get_skills - Found {len(workflow_result.skills)} skills")
+                        result.pass_test(
+                            f"normalize_title_and_get_skills - Found {len(workflow_result.skills)} skills"
+                        )
                     else:
-                        result.fail_test("normalize_title_and_get_skills", "No skills returned")
-                        
+                        result.fail_test(
+                            "normalize_title_and_get_skills", "No skills returned"
+                        )
+
                     # Check workflow metadata
-                    if "workflow_complete" in workflow_result.workflow_metadata["steps_completed"]:
-                        result.pass_test("workflow_metadata - Workflow completed successfully")
+                    if (
+                        "workflow_complete"
+                        in workflow_result.workflow_metadata["steps_completed"]
+                    ):
+                        result.pass_test(
+                            "workflow_metadata - Workflow completed successfully"
+                        )
                     else:
-                        result.fail_test("workflow_metadata", "Workflow not marked as complete")
-                        
+                        result.fail_test(
+                            "workflow_metadata", "Workflow not marked as complete"
+                        )
+
                 except Exception as e:
                     result.fail_test("normalize_title_and_get_skills", str(e))
 
                 # Test simplified workflow
                 try:
                     simple_result = await workflow.get_title_skills_simple(
-                        "data scientist",
-                        limit=15
+                        "data scientist", limit=15
                     )
                     if simple_result["skills"] and len(simple_result["skills"]) > 0:
-                        result.pass_test(f"get_title_skills_simple - Found {len(simple_result['skills'])} skills")
+                        result.pass_test(
+                            f"get_title_skills_simple - Found {len(simple_result['skills'])} skills"
+                        )
                     else:
-                        result.pass_test("get_title_skills_simple - No skills but no error")
+                        result.pass_test(
+                            "get_title_skills_simple - No skills but no error"
+                        )
                 except Exception as e:
                     result.fail_test("get_title_skills_simple", str(e))
 
         except Exception as e:
             result.fail_test("Workflow setup", str(e))
-            
+
         return result
 
     async def run_all_tests(self):
         """Run all API tests."""
         print("🚀 MCP Lightcast API Integration Tests")
         print("=" * 50)
-        
+
         if not self.check_credentials():
             return False
 
@@ -529,14 +609,16 @@ class ManualAPITester:
             self.test_occupation_benchmark_api,
             self.test_career_pathways_api,
             self.test_job_postings_api,
-            self.test_workflow_integration
+            self.test_workflow_integration,
         ]
-        
+
         total_passed = 0
         total_failed = 0
-        
+
         for test_method in test_methods:
-            print(f"\n🧪 Testing {test_method.__name__.replace('test_', '').replace('_', ' ').title()}...")
+            print(
+                f"\n🧪 Testing {test_method.__name__.replace('test_', '').replace('_', ' ').title()}..."
+            )
             try:
                 result = await test_method()
                 result.summary()
@@ -549,12 +631,14 @@ class ManualAPITester:
         # Overall summary
         print("\n" + "=" * 50)
         print(f"📊 OVERALL RESULTS: {total_passed} passed, {total_failed} failed")
-        
+
         if total_failed == 0:
             print("🎉 All API tests passed!")
             return True
         else:
-            print(f"⚠️  {total_failed} tests failed - check API credentials and network connectivity")
+            print(
+                f"⚠️  {total_failed} tests failed - check API credentials and network connectivity"
+            )
             return False
 
 
@@ -562,7 +646,7 @@ async def main():
     """Main entry point for manual API tests."""
     tester = ManualAPITester()
     success = await tester.run_all_tests()
-    
+
     if not success:
         sys.exit(1)
 

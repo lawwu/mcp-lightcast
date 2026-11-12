@@ -23,7 +23,10 @@ except ImportError:
 
         client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
         client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
-        oauth_url: str = Field(default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL")
+        oauth_url: str = Field(
+            default="https://auth.emsicloud.com/connect/token",
+            alias="LIGHTCAST_OAUTH_URL",
+        )
         oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
 
     lightcast_config = LightcastConfig()
@@ -31,6 +34,7 @@ except ImportError:
 
 class TokenResponse(BaseModel):
     """OAuth2 token response model."""
+
     access_token: str
     token_type: str
     expires_in: int
@@ -44,12 +48,14 @@ class LightcastAuth:
         self.client_id = lightcast_config.client_id
         self.client_secret = lightcast_config.client_secret
         self.oauth_url = lightcast_config.oauth_url
-        self.oauth_scope = getattr(lightcast_config, 'oauth_scope', 'emsi_open')
+        self.oauth_scope = getattr(lightcast_config, "oauth_scope", "emsi_open")
         self._scope: str | None = None  # Dynamic scope override
         self._token: str | None = None
         self._token_expires_at: float = 0
         self._lock = asyncio.Lock()
-        self._current_scope: str | None = None  # Track which scope the current token was issued for
+        self._current_scope: str | None = (
+            None  # Track which scope the current token was issued for
+        )
 
     async def get_access_token(self) -> str:
         """Get a valid access token, refreshing if necessary."""
@@ -82,44 +88,41 @@ class LightcastAuth:
             "grant_type": "client_credentials",
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "scope": current_scope
+            "scope": current_scope,
         }
 
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    self.oauth_url,
-                    data=data,
-                    headers=headers,
-                    timeout=30.0
+                    self.oauth_url, data=data, headers=headers, timeout=30.0
                 )
                 response.raise_for_status()
 
                 token_data = TokenResponse(**response.json())
                 self._token = token_data.access_token
                 self._token_expires_at = time.time() + token_data.expires_in
-                self._current_scope = current_scope  # Track which scope this token was issued for
+                self._current_scope = (
+                    current_scope  # Track which scope this token was issued for
+                )
 
             except httpx.HTTPStatusError as e:
-                raise AuthenticationError(f"Failed to get access token: {e.response.status_code} {e.response.text}")
+                raise AuthenticationError(
+                    f"Failed to get access token: {e.response.status_code} {e.response.text}"
+                ) from e
             except Exception as e:
-                raise AuthenticationError(f"Authentication error: {str(e)}")
+                raise AuthenticationError(f"Authentication error: {str(e)}") from e
 
     async def get_auth_headers(self) -> dict[str, str]:
         """Get authentication headers for API requests."""
         token = await self.get_access_token()
-        return {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
+        return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 
 class AuthenticationError(Exception):
     """Exception raised for authentication errors."""
+
     pass
 
 

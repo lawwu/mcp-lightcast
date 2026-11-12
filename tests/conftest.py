@@ -27,10 +27,12 @@ def mock_auth():
     """Mock authentication for testing."""
     auth = MagicMock(spec=LightcastAuth)
     auth.get_access_token = AsyncMock(return_value="mock_access_token")
-    auth.get_auth_headers = AsyncMock(return_value={
-        "Authorization": "Bearer mock_access_token",
-        "Content-Type": "application/json"
-    })
+    auth.get_auth_headers = AsyncMock(
+        return_value={
+            "Authorization": "Bearer mock_access_token",
+            "Content-Type": "application/json",
+        }
+    )
     return auth
 
 
@@ -46,16 +48,8 @@ def sample_title_search_response():
     """Sample response for title search."""
     return {
         "data": [
-            {
-                "id": "1",
-                "name": "Software Engineer",
-                "type": "Tech"
-            },
-            {
-                "id": "2",
-                "name": "Senior Software Engineer",
-                "type": "Tech"
-            }
+            {"id": "1", "name": "Software Engineer", "type": "Tech"},
+            {"id": "2", "name": "Senior Software Engineer", "type": "Tech"},
         ]
     }
 
@@ -68,7 +62,7 @@ def sample_title_normalize_response():
             "id": "123",
             "name": "Software Engineer",
             "confidence": 0.95,
-            "type": "Tech"
+            "type": "Tech",
         }
     }
 
@@ -83,15 +77,15 @@ def sample_skill_search_response():
                 "name": "Python",
                 "type": "Hard Skill",
                 "category": "Information Technology",
-                "subcategory": "Programming Languages"
+                "subcategory": "Programming Languages",
             },
             {
                 "id": "KS1200770D9CT9WGXMPS",
                 "name": "JavaScript",
                 "type": "Hard Skill",
                 "category": "Information Technology",
-                "subcategory": "Programming Languages"
-            }
+                "subcategory": "Programming Languages",
+            },
         ]
     }
 
@@ -106,7 +100,7 @@ def sample_classification_response():
                 "confidence": 0.92,
                 "mapped_id": "15-1252.00",
                 "mapped_name": "Software Developers",
-                "mapping_type": "onet_soc"
+                "mapping_type": "onet_soc",
             }
         ]
     }
@@ -123,16 +117,16 @@ def sample_occupation_skills_response():
                     "id": "KS1200364C9C1LK3V5Q1",
                     "name": "Python",
                     "type": "Hard Skill",
-                    "importance": 0.85
+                    "importance": 0.85,
                 },
                 {
                     "id": "KS1200770D9CT9WGXMPS",
                     "name": "JavaScript",
                     "type": "Hard Skill",
-                    "importance": 0.78
-                }
+                    "importance": 0.78,
+                },
             ],
-            "total_skills": 2
+            "total_skills": 2,
         }
     }
 
@@ -176,6 +170,7 @@ def mock_similarity_client(mock_httpx_client, mock_auth):
 @pytest.fixture
 def mock_successful_response():
     """Create a mock successful HTTP response."""
+
     def _create_response(json_data: dict[str, Any], status_code: int = 200):
         response = MagicMock()
         response.status_code = status_code
@@ -183,13 +178,17 @@ def mock_successful_response():
         response.headers = {"content-type": "application/json"}
         response.raise_for_status.return_value = None
         return response
+
     return _create_response
 
 
 @pytest.fixture
 def mock_error_response():
     """Create a mock error HTTP response."""
-    def _create_error_response(status_code: int = 400, error_message: str = "Bad Request"):
+
+    def _create_error_response(
+        status_code: int = 400, error_message: str = "Bad Request"
+    ):
         response = MagicMock()
         response.status_code = status_code
         response.reason_phrase = error_message
@@ -199,8 +198,10 @@ def mock_error_response():
 
         def raise_for_status():
             from httpx import HTTPStatusError
+
             raise HTTPStatusError(error_message, request=MagicMock(), response=response)
 
         response.raise_for_status.side_effect = raise_for_status
         return response
+
     return _create_error_response

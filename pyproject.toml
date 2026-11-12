@@ -85,6 +85,13 @@ target-version = "py312"
 select = ["E", "W", "F", "I", "B", "UP"]
 ignore = ["E501"]  # Line too long
 
+[tool.ruff.lint.per-file-ignores]
+# Imports follow sys.path setup or fallback config loading on purpose
+"src/mcp_lightcast/server.py" = ["E402"]
+"src/mcp_lightcast/apis/base.py" = ["E402"]
+"tests/manual_api_integration.py" = ["E402"]
+"tests/test_mcp_tools_integration.py" = ["E402"]
+
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
