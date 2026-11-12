@@ -577,6 +577,22 @@ make install-dev
 make dev-server
 ```
 
+### GitHub Actions maintenance
+
+Workflows and their transitive action dependencies are pinned in
+`.github/workflows/actions.lock`. After changing an action version, run
+`gh actions-lock` and commit the updated workflows and lockfile together. Install
+the GitHub CLI extension with `gh extension install github/gh-actions-lock --pin v0.4.1`
+if needed.
+
+Lint workflows with `uvx zizmor==1.32.0 .github/` (or add `--offline` for local-only
+audits), and verify the lockfile with `gh actions-lock --verify`. CI runs both
+checks on every pull request. The optional `--persona auditor` adds stricter,
+lower-confidence findings and style checks beyond the default security audits.
+Keep comments on their own lines, away from `uses:` lines: relocking rewrites
+those lines. Dependabot groups weekly GitHub Actions and Python updates with a
+seven-day cooldown; choose tool and action releases at least seven days old.
+
 ### Project Structure
 
 ```
