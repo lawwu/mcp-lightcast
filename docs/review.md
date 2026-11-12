@@ -46,7 +46,7 @@ The [MCP review](mcp-review.md) documents the upgrade to the 2026-07-28 protocol
 | Medium | No useful quota handling or rate spacing | Shared per-service spacing, bounded retries, reset headers, one-time 401 refresh |
 | Medium | Skill IDs disappeared during workflow combination | Preserve IDs and deduplicate by ID with source provenance |
 | Medium | Tests could contact the live API merely because `.env` existed | Offline network guard and explicit `--live` flag |
-| Medium | CI targeted Python versions below the package minimum | Test Python 3.12, 3.13, and 3.14; use locked dependencies |
+| Medium | CI targeted Python versions below the package minimum | Require Python 3.14+; test 3.14 and 3.15 with locked dependencies and an explicit interpreter per job |
 | Medium | Docker used an incorrect OAuth URL and a meaningless health check | Package-only runtime image, correct packaged defaults, no fake health assertion |
 | Low | Package URLs, release notes, and setup instructions had stale placeholders | Correct project links, migration guide, generated tool reference, and automatic Pages build |
 
@@ -66,6 +66,8 @@ These are the primary contracts used during the review:
 
 Offline tests assert HTTP paths and bodies, concurrency behavior, input constraints, error propagation, and actual MCP calls. The live runner checks operation availability using small requests through the MCP server. It does not compare all returned market data with independent ground truth or exercise every possible filter combination.
 
-The updated suite completed **98 offline tests**, **32 existing live MCP tool checks**, and **18 Core LMI live checks**. Offline tests passed on Python 3.13 and 3.14. An isolated Python 3.12 wheel installation passed stdio and streamable HTTP connections with both the current and legacy protocols, 37-tool discovery, version reporting, and external environment-file loading. Browser checks covered the new Core LMI and MCP guides; the original site review also covered search, light/dark themes, and a 390-pixel mobile layout.
+The Core LMI review completed **98 offline tests**, **32 existing live MCP tool checks**, and **18 Core LMI live checks**. Before the minimum Python version was raised, offline tests passed on Python 3.13 and 3.14, and an isolated Python 3.12 wheel installation passed stdio and streamable HTTP connections with both the current and legacy protocols, 37-tool discovery, version reporting, and external environment-file loading. These earlier results do not imply continuing support for Python 3.12 or 3.13. Browser checks covered the new Core LMI and MCP guides; the original site review also covered search, light/dark themes, and a 390-pixel mobile layout.
+
+After raising the minimum to Python 3.14, all **98 offline tests passed on both 3.14 and 3.15**, with eight opt-in live tests skipped on each. The installed Python 3.14 wheel passed both protocols over stdio and HTTP. Lint, formatting, type checks, package metadata, strict documentation, workflow checks, and production/development Docker builds passed. Python 3.15 emitted one upstream `beartype` / `py-key-value-aio` protocol-check deprecation warning; it remains visible. This support-policy change did not repeat live API requests.
 
 The docs build uses Zensical, is strict, and generates the reference from registered tool schemas. See [testing](testing.md) for repeatable commands and [migration](migration.md) for breaking contract corrections.

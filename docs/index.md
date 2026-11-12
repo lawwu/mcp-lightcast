@@ -17,7 +17,7 @@ hide:
 [Explore the tools](reference/tools.md){ .md-button }
 </div>
 
-Python 3.12+ · Local or HTTP · Open source
+Python 3.14+ · Local or HTTP · Open source
 
 </div>
 <div class="pipeline" role="img" aria-label="Illustrative workflow: normalize a job title, classify its occupation, and discover associated skills">

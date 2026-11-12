@@ -2,6 +2,8 @@
 
 ## Offline regression suite
 
+CI tests Python **3.14 and 3.15**. Package metadata requires Python 3.14 or later; docs, release builds, and Docker images use 3.14. The CI matrix explicitly sets `UV_PYTHON` so each job uses its named interpreter.
+
 ```bash
 uv sync --all-groups --frozen
 FASTMCP_MCP_CAMELCASE_COMPAT=false uv run pytest
