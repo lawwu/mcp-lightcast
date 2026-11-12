@@ -17,6 +17,12 @@ class LightcastConfig(BaseSettings):
         default="https://classification.emsicloud.com",
         alias="LIGHTCAST_CLASSIFICATION_URL",
     )
+    core_lmi_url: str = Field(
+        default="https://agnitio.emsicloud.com", alias="LIGHTCAST_CORE_LMI_URL"
+    )
+    core_lmi_requests_per_second: float = Field(
+        default=1, gt=0, alias="LIGHTCAST_CORE_LMI_REQUESTS_PER_SECOND"
+    )
     oauth_url: str = Field(
         default="https://auth.emsicloud.com/connect/token", alias="LIGHTCAST_OAUTH_URL"
     )

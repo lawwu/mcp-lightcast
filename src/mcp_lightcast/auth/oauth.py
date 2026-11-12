@@ -5,12 +5,13 @@ import time
 from weakref import WeakKeyDictionary
 
 import httpx
+from fastmcp.exceptions import ToolError
 from pydantic import BaseModel, Field, ValidationError
 
 from ..settings import LightcastConfig, get_settings
 
 
-class AuthenticationError(Exception):
+class AuthenticationError(ToolError):
     """Credentials, scope, or authentication service could not be validated."""
 
 

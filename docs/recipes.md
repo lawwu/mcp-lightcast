@@ -88,3 +88,7 @@ async def main():
 
 asyncio.run(main())
 ```
+
+## Employment, wages, industries, and education
+
+See the [Core LMI guide](core-lmi.md) for verified query examples: compare software-developer employment and earnings across states, combine counties into a custom region, request location quotients and shift-share components, and examine computer-science completions at an institution.

@@ -9,12 +9,15 @@ from urllib.parse import quote
 from weakref import WeakKeyDictionary
 
 import httpx
+from fastmcp.exceptions import ToolError
 
 from ..auth.oauth import lightcast_auth
 from ..settings import get_settings
 
 
-class APIError(Exception):
+class APIError(ToolError):
+    """Safe, actionable text for MCP; raw response_data stays inside Python."""
+
     def __init__(
         self, message: str, status_code: int | None = None, response_data: Any = None
     ):
@@ -46,6 +49,7 @@ class BaseLightcastClient:
         "occupation_benchmark": "occupation-benchmark",
         "career_pathways": "career-pathways",
         "job_postings": "postings:us",
+        "core_lmi": "agnitio",
     }
     API_PATHS = {
         "skills": "skills",
@@ -62,6 +66,8 @@ class BaseLightcastClient:
         self.base_url = self.config.base_url.rstrip("/")
         if api_name == "classification":
             self.base_url = self.config.classification_url.rstrip("/")
+        elif api_name == "core_lmi":
+            self.base_url = self.config.core_lmi_url.rstrip("/")
         elif api_name in self.API_PATHS:
             self.base_url += "/" + self.API_PATHS[api_name]
         self.required_scope = self.config.api_scopes.get(
@@ -84,7 +90,12 @@ class BaseLightcastClient:
         )
         async with lock:
             await asyncio.sleep(max(0, times[0] - time.monotonic()))
-            times[0] = time.monotonic() + 1 / self.config.requests_per_second
+            rate = (
+                self.config.core_lmi_requests_per_second
+                if self.api_name == "core_lmi"
+                else self.config.requests_per_second
+            )
+            times[0] = time.monotonic() + 1 / rate
 
     @staticmethod
     def _retry_delay(response: httpx.Response, attempt: int) -> float | None:
@@ -103,14 +114,14 @@ class BaseLightcastClient:
         # A 429 without Retry-After may be a monthly/yearly quota.
         return None if response.status_code == 429 else 0.5 * 2**attempt
 
-    async def _make_request(
+    async def _request_json(
         self,
         method: str,
         endpoint: str,
         data: Any = None,
         params: dict[str, Any] | None = None,
         version: str = "latest",
-    ) -> dict[str, Any]:
+    ) -> Any:
         url = f"{self.base_url}/{endpoint.lstrip('/')}".replace(
             "{version}", segment(version)
         )
@@ -156,8 +167,11 @@ class BaseLightcastClient:
                     429,
                     {
                         "retry_after": response.headers.get("Retry-After"),
-                        "reset_time": response.headers.get("RateLimit-Reset"),
-                        "remaining": response.headers.get("RateLimit-Remaining"),
+                        "reset_time": response.headers.get("RateLimit-Reset")
+                        or response.headers.get("X-Rate-Limit-Reset"),
+                        "remaining": response.headers.get("RateLimit-Remaining")
+                        or response.headers.get("X-Rate-Limit-Remaining"),
+                        "limit": response.headers.get("X-Rate-Limit-Limit"),
                     },
                 )
             if not response.is_success:
@@ -179,9 +193,20 @@ class BaseLightcastClient:
                 result = response.json()
             except ValueError:
                 raise APIError("Lightcast returned an invalid JSON response.") from None
-            if not isinstance(result, dict):
-                raise APIError("Lightcast returned an unexpected response shape.")
             return result
+
+    async def _make_request(
+        self,
+        method: str,
+        endpoint: str,
+        data: Any = None,
+        params: dict[str, Any] | None = None,
+        version: str = "latest",
+    ) -> dict[str, Any]:
+        result = await self._request_json(method, endpoint, data, params, version)
+        if not isinstance(result, dict):
+            raise APIError("Lightcast returned an unexpected response shape.")
+        return result
 
     async def get(
         self,

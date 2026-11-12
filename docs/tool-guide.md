@@ -49,4 +49,8 @@ Use `get_postings_metadata` to discover supported filters and metrics. Every pos
 
 `normalize_title_and_extract_skills` uses Classification for both normalization and extraction. It preserves warnings and uses an active classifier release.
 
-See the [complete input schemas](reference/tools.md) for all 32 tools.
+See the [complete input schemas](reference/tools.md) for all 37 tools.
+
+## Core LMI
+
+Use `list_core_lmi_datasets` → `get_core_lmi_versions` → `get_core_lmi_metadata` → `get_core_lmi_dimension` → `query_core_lmi` to move from account access to a reproducible data query. [Core LMI examples](core-lmi.md) cover employment, annual earnings, regional industry analysis, and education completions, plus the observed pagination and cost-of-living limitations.

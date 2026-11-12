@@ -19,9 +19,9 @@ async def test_catalog_and_resources():
         tools = await client.list_tools()
         resources = await client.list_resources()
         info = await client.read_resource("lightcast://server/info")
-    assert len(tools) == 32
+    assert len(tools) == 37
     assert len(resources) == 2
-    assert all(t.annotations.readOnlyHint for t in tools)
+    assert all(t.annotations.read_only_hint for t in tools)
     assert json.loads(info[0].text)["version"] == "0.3.0"
 
 

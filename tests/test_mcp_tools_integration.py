@@ -18,6 +18,7 @@ pytestmark = pytest.mark.live
         "get_benchmark_metadata",
         "get_pathways_metadata",
         "get_postings_metadata",
+        "list_core_lmi_datasets",
     ],
 )
 async def test_live_metadata(tool):
