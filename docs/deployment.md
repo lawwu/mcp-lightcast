@@ -67,6 +67,71 @@ For local HTTP access:
 uv run mcp-lightcast --transport streamable-http --host 127.0.0.1 --port 3000
 ```
 
+## HTTP health endpoint (unreleased)
+
+The source version adds `GET /health` and `HEAD /health` alongside `/mcp`. This endpoint is not in the published v0.3.0 package or image; build from the checkout until the next release.
+
+```bash
+curl --fail http://127.0.0.1:3000/health
+# {"status":"ok"}
+```
+
+Successful probes return HTTP 200, `Content-Type: application/json`, and `Cache-Control: no-store`. HEAD returns the same headers without a body; writes return 405. This is a process liveness check: it does not authenticate to Lightcast, request a token, validate dataset permissions, or consume API quota. The existing MCP resource `lightcast://server/health` remains a separate, explicit default-scope OAuth check.
+
+Host and Origin protection also applies to `/health`. Use a loopback address or an allowed hostname for your monitoring probe. The endpoint returns no credentials, account metadata, or upstream error details. The HTTP service in `docker-compose.yml` uses it for container health monitoring.
+
+## Behind an nginx reverse proxy
+
+Keep the backend on loopback when nginx runs on the same host, or on a private container network when the two run in separate containers. Set the public host and trusted browser origins in the server's environment file alongside your Lightcast credentials:
+
+```dotenv
+FASTMCP_HTTP_ALLOWED_HOSTS=["mcp.example.com"]
+FASTMCP_HTTP_ALLOWED_ORIGINS=["https://mcp.example.com","https://trusted-client.example.com"]
+```
+
+```bash
+uv run mcp-lightcast --env-file /absolute/path/to/lightcast.env \
+  --transport streamable-http --host 127.0.0.1 --port 3000
+```
+
+For an nginx server with your TLS certificate installed, use:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name mcp.example.com;
+    ssl_certificate /etc/letsencrypt/live/mcp.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mcp.example.com/privkey.pem;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header Connection "";
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_buffering off;
+    proxy_request_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 300s;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+    }
+
+    # Optional prefix: /lightcast/mcp becomes /mcp upstream.
+    location /lightcast/ {
+        proxy_pass http://127.0.0.1:3000/;
+    }
+}
+```
+
+Connect clients to `https://mcp.example.com/mcp` or `https://mcp.example.com/lightcast/mcp`. Health probes use `/health` or `/lightcast/health` respectively. Preserve the external Host, Origin, and MCP headers, including session and protocol headers. Disabling response buffering allows SSE events to reach clients immediately. The trailing slash in the prefixed `proxy_pass` removes only that prefix.
+
+This configuration handles TLS and forwarding; it does not add inbound authentication. Use it with your authenticated gateway before sharing the Lightcast account. Host/Origin allowlists are not authentication or CORS. Explicit HTTPS origins also avoid relying on a proxy's forwarded scheme for origin validation; forwarding an allowed hostname in `X-Forwarded-Host` does not override an untrusted Host.
+
+The [proxy test suite](testing.md#reverse-proxy-integration) exercises nginx HTTPS with a verified temporary certificate, root and prefixed routes, both MCP protocol versions, tool discovery, resource reads, a Core LMI query using synthetic data, and rejected Host/Origin headers. It does not validate a production authentication gateway or live Lightcast entitlements.
+
+See [FastMCP HTTP deployment](https://gofastmcp.com/docs/deployment/http#reverse-proxy-nginx) and [nginx proxy directives](https://nginx.org/en/docs/http/ngx_http_proxy_module.html) for upstream configuration details.
+
 ## Docker
 
 ```bash

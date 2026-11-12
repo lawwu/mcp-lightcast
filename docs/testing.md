@@ -12,7 +12,23 @@ uv run ruff format --check src tests
 uv run mypy src
 ```
 
-Tests use synthetic HTTP responses shaped around the current Lightcast contracts. They cover scope isolation, concurrent token refresh, version discovery, retry bounds, MCP input validation, real tool serialization, partial workflow results, Core LMI pagination, structured output schemas, current/legacy protocol connections, and HTTP Origin/Host protection. Unmocked network calls fail during offline tests. Local `.env` credentials are replaced with test values.
+Tests use synthetic HTTP responses shaped around the current Lightcast contracts. They cover scope isolation, concurrent token refresh, version discovery, retry bounds, MCP input validation, real tool serialization, partial workflow results, Core LMI pagination, structured output schemas, current/legacy protocol connections, and HTTP Origin/Host protection. HTTP health tests check GET/HEAD, cache prevention, rejected writes, and liveness without OAuth or credentials. Unmocked network calls fail during offline tests. Local `.env` credentials are replaced with test values.
+
+## Reverse proxy integration
+
+The CI Docker job builds the production image and tests it through a real nginx reverse proxy. To repeat locally, install Docker with Compose and OpenSSL, then run:
+
+```bash
+docker build -t mcp-lightcast:test .
+FASTMCP_MCP_CAMELCASE_COMPAT=false uv run --frozen pytest \
+  --proxy tests/integration/test_reverse_proxy.py -v
+```
+
+These tests are skipped unless `--proxy` is supplied. They create an isolated container network with the production server, nginx, and a small synthetic OAuth/Core LMI upstream. The backend has no published port or external network access. Only nginx receives a randomly assigned loopback port. A temporary TLS certificate is generated and trusted by the test client; certificate verification stays enabled. Containers and the network are removed afterward.
+
+Coverage includes GET/HEAD health probes, discovery of all 37 tools, reading server information, and a successful Core LMI tool call preserving nulls and release metadata. Both the current 2026-07-28 protocol and legacy 2025-11-25 clients run through `/mcp` and `/lightcast/mcp`. Negative cases reject untrusted Host/Origin headers, including a spoofed forwarded hostname. The explicit proxy tests allow only loopback connections from the test client; the ordinary suite continues to reject unmocked traffic through both HTTP client libraries.
+
+No real Lightcast credentials or quotas are used. The fixture credentials and data are synthetic; do not use the test Compose file as a production deployment. See [reverse proxy deployment](deployment.md#behind-an-nginx-reverse-proxy) for server and nginx settings.
 
 ## Live API checks
 

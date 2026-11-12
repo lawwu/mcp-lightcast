@@ -1,6 +1,7 @@
 """Offline by default: no local credentials and no accidental network requests."""
 
 import httpx
+import httpx2
 import pytest
 
 from mcp_lightcast.auth.oauth import lightcast_auth
@@ -13,9 +14,18 @@ def pytest_addoption(parser):
         action="store_true",
         help="Allow live Lightcast metadata tests using local credentials.",
     )
+    parser.addoption(
+        "--proxy",
+        action="store_true",
+        help="Run Docker/nginx tests using loopback HTTPS and synthetic upstream data.",
+    )
 
 
 def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--proxy"):
+        for item in items:
+            if "proxy" in item.keywords:
+                item.add_marker(pytest.mark.skip(reason="Use --proxy with Docker"))
     if not config.getoption("--live"):
         for item in items:
             if "live" in item.keywords:
@@ -44,12 +54,26 @@ def isolated_environment(monkeypatch, request):
         monkeypatch.setenv("LIGHTCAST_CORE_LMI_URL", "https://agnitio.emsicloud.com")
         monkeypatch.setenv("LIGHTCAST_CORE_LMI_REQUESTS_PER_SECOND", "100000")
 
-        async def deny_network(*args, **kwargs):
-            raise AssertionError("Unmocked network request in an offline test")
+        def guarded_transport(original):
+            async def guarded(self, http_request):
+                if (
+                    "proxy" in request.node.keywords
+                    and request.config.getoption("--proxy")
+                    and http_request.url.host == "127.0.0.1"
+                ):
+                    return await original(self, http_request)
+                raise AssertionError("Unmocked network request in an offline test")
 
-        monkeypatch.setattr(
-            httpx.AsyncHTTPTransport, "handle_async_request", deny_network
-        )
+            return guarded
+
+        # Lightcast uses httpx; the MCP SDK uses httpx2. Only the explicit proxy
+        # tests may connect over loopback. All external requests remain blocked.
+        for library in (httpx, httpx2):
+            monkeypatch.setattr(
+                library.AsyncHTTPTransport,
+                "handle_async_request",
+                guarded_transport(library.AsyncHTTPTransport.handle_async_request),
+            )
     yield
     get_settings.cache_clear()
     lightcast_auth._tokens.clear()

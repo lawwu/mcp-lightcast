@@ -77,7 +77,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 addopts = "--asyncio-mode=auto"
-markers = ["live: opt-in tests against the actual Lightcast API"]
+markers = [
+    "live: opt-in tests against the actual Lightcast API",
+    "proxy: opt-in local Docker/nginx integration tests (no live Lightcast access)",
+]
 
 [tool.black]
 line-length = 88
