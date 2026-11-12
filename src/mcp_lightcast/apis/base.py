@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Self
@@ -11,6 +12,7 @@ from weakref import WeakKeyDictionary
 import httpx
 from fastmcp.exceptions import ToolError
 
+from ..auth.credentials import LightcastCredentials, get_credentials
 from ..auth.oauth import lightcast_auth
 from ..settings import get_settings
 
@@ -40,6 +42,13 @@ def segment(value: str) -> str:
 
 
 _rate_state: WeakKeyDictionary = WeakKeyDictionary()
+
+
+@dataclass
+class _RateState:
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    next_request: float = 0.0
+    users: int = 0
 
 
 class BaseLightcastClient:
@@ -83,19 +92,32 @@ class BaseLightcastClient:
         await self.client.aclose()
         return None
 
-    async def _throttle(self) -> None:
+    async def _throttle(self, credentials: LightcastCredentials) -> None:
         states = _rate_state.setdefault(asyncio.get_running_loop(), {})
-        lock, times = states.setdefault(
-            (self.base_url, self.config.client_id), (asyncio.Lock(), [0.0])
+        key = (
+            self.base_url,
+            credentials.identity(self.config.oauth_url, include_secret=False),
         )
-        async with lock:
-            await asyncio.sleep(max(0, times[0] - time.monotonic()))
-            rate = (
-                self.config.core_lmi_requests_per_second
-                if self.api_name == "core_lmi"
-                else self.config.requests_per_second
-            )
-            times[0] = time.monotonic() + 1 / rate
+        if key not in states:
+            for stale_key, state in list(states.items()):
+                if state.users == 0 and state.next_request <= time.monotonic():
+                    del states[stale_key]
+            if len(states) >= 1024:
+                raise APIError("Server credential capacity reached; retry later.")
+            states[key] = _RateState()
+        state = states[key]
+        state.users += 1
+        try:
+            async with state.lock:
+                await asyncio.sleep(max(0, state.next_request - time.monotonic()))
+                rate = (
+                    self.config.core_lmi_requests_per_second
+                    if self.api_name == "core_lmi"
+                    else self.config.requests_per_second
+                )
+                state.next_request = time.monotonic() + 1 / rate
+        finally:
+            state.users -= 1
 
     @staticmethod
     def _retry_delay(response: httpx.Response, attempt: int) -> float | None:
@@ -127,11 +149,14 @@ class BaseLightcastClient:
         )
         refreshed = False
         retries = 0
+        credentials = await get_credentials()
         while True:
-            headers = await self._auth.get_auth_headers(self.required_scope)
+            headers = await self._auth.get_auth_headers(
+                self.required_scope, credentials=credentials
+            )
             if isinstance(data, str):
                 headers["Content-Type"] = "text/plain"
-            await self._throttle()
+            await self._throttle(credentials)
             try:
                 response = await self.client.request(
                     method=method,
@@ -149,6 +174,7 @@ class BaseLightcastClient:
                 self._auth.invalidate(
                     self.required_scope,
                     headers["Authorization"].removeprefix("Bearer "),
+                    credentials=credentials,
                 )
                 refreshed = True
                 continue

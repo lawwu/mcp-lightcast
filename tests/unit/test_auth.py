@@ -7,6 +7,7 @@ from urllib.parse import parse_qs
 import httpx
 import pytest
 
+from mcp_lightcast.auth.credentials import get_credentials
 from mcp_lightcast.auth.oauth import AuthenticationError, LightcastAuth
 
 
@@ -41,15 +42,17 @@ async def test_scopes_are_isolated_and_refresh_once(httpx_mock):
 
 async def test_expired_token_refresh_and_stale_invalidation(httpx_mock):
     auth = LightcastAuth()
-    auth._tokens["emsi_open"] = ("old", time.monotonic() - 1)
+    credentials = await get_credentials()
+    key = (credentials.identity(auth.config.oauth_url), "emsi_open")
+    auth._tokens[key] = ("old", time.monotonic() - 1)
     httpx_mock.add_response(
         json={"access_token": "new", "token_type": "Bearer", "expires_in": 3600}
     )
     assert await auth.get_access_token() == "new"
-    auth.invalidate("emsi_open", "old")
+    auth.invalidate("emsi_open", "old", credentials=credentials)
     assert await auth.get_access_token() == "new"
-    auth.invalidate("emsi_open", "new")
-    assert "emsi_open" not in auth._tokens
+    auth.invalidate("emsi_open", "new", credentials=credentials)
+    assert key not in auth._tokens
 
 
 async def test_short_lived_token_is_cached(httpx_mock):

@@ -16,6 +16,8 @@ Tests use synthetic HTTP responses shaped around the current Lightcast contracts
 
 ## Reverse proxy integration
 
+Credential-isolation regressions additionally exercise concurrent HTTP callers, both protocol versions, composed workflows, authenticated health resources, and custom providers. Cases include credential rotation, rejected headers, per-account rates, sanitized errors, and bounded token caches. These use synthetic credentials; no live account is needed.
+
 The CI Docker job builds the production image and tests it through a real nginx reverse proxy. To repeat locally, install Docker with Compose and OpenSSL, then run:
 
 ```bash
@@ -29,6 +31,8 @@ These tests are skipped unless `--proxy` is supplied. They create an isolated co
 Coverage includes GET/HEAD health probes, discovery of all 37 tools, reading server information, and a successful Core LMI tool call preserving nulls and release metadata. Both the current 2026-07-28 protocol and legacy 2025-11-25 clients run through `/mcp` and `/lightcast/mcp`. Negative cases reject untrusted Host/Origin headers, including a spoofed forwarded hostname. The explicit proxy tests allow only loopback connections from the test client; the ordinary suite continues to reject unmocked traffic through both HTTP client libraries.
 
 No real Lightcast credentials or quotas are used. The fixture credentials and data are synthetic; do not use the test Compose file as a production deployment. See [reverse proxy deployment](deployment.md#behind-an-nginx-reverse-proxy) for server and nginx settings.
+
+The stack also starts a server in header mode. Concurrent synthetic accounts receive different Core LMI results through `/headers/mcp`, for both protocol versions. Missing headers cannot use the valid environment credentials intentionally configured on that server. An incorrect secret cannot reuse a cached token for the same client ID. `/headers/health` remains credential-free, and server/proxy logs are checked for the submitted synthetic secrets.
 
 ## Live API checks
 

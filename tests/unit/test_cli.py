@@ -1,5 +1,6 @@
 """Configuration is loaded before auth; stdout stays available for MCP JSON-RPC."""
 
+import pytest
 from click.testing import CliRunner
 
 from mcp_lightcast import main
@@ -50,3 +51,26 @@ def test_explicit_http_transport(monkeypatch):
     assert calls[0]["host"] == "127.0.0.1" and calls[0]["port"] == 3001
 
     assert calls[0]["host_origin_protection"] is True
+
+
+def test_headers_allow_http_startup_without_server_credentials(monkeypatch):
+    from mcp_lightcast.server import mcp
+
+    monkeypatch.setenv("LIGHTCAST_CREDENTIAL_MODE", "headers")
+    monkeypatch.setenv("LIGHTCAST_CLIENT_ID", "")
+    monkeypatch.setenv("LIGHTCAST_CLIENT_SECRET", "")
+    calls = []
+    monkeypatch.setattr(mcp, "run", lambda **kwargs: calls.append(kwargs))
+    result = CliRunner().invoke(main, ["--transport", "streamable-http"])
+    assert result.exit_code == 0, result.output
+    assert calls[0]["host_origin_protection"] is True
+
+
+@pytest.mark.parametrize(
+    "args", [[], ["--transport", "streamable-http", "--validate-config"]]
+)
+def test_headers_reject_stdio_and_local_validation(monkeypatch, args):
+    monkeypatch.setenv("LIGHTCAST_CREDENTIAL_MODE", "headers")
+    result = CliRunner().invoke(main, args)
+    assert result.exit_code != 0
+    assert "Header credentials require" in result.output

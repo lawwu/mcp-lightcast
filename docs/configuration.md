@@ -6,8 +6,9 @@ The installed package and repository checkout use the same configuration. Values
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `LIGHTCAST_CLIENT_ID` | Required | OAuth client ID |
-| `LIGHTCAST_CLIENT_SECRET` | Required | OAuth client secret |
+| `LIGHTCAST_CREDENTIAL_MODE` | `environment` | Credential source: `environment` or HTTP-only `headers` (unreleased) |
+| `LIGHTCAST_CLIENT_ID` | Required in environment mode | OAuth client ID |
+| `LIGHTCAST_CLIENT_SECRET` | Required in environment mode | OAuth client secret |
 | `LIGHTCAST_OAUTH_SCOPE` | `emsi_open` | Scope for Skills and Titles; free-tier accounts may need `lightcast_open_free` |
 | `LIGHTCAST_OAUTH_URL` | `https://auth.emsicloud.com/connect/token` | Token endpoint |
 | `LIGHTCAST_BASE_URL` | `https://api.lightcast.io` | Root for all API families except Classification and Core LMI |
@@ -37,7 +38,9 @@ For an account assigned `lightcast_open` for Classification:
 LIGHTCAST_API_SCOPES={"classification":"lightcast_open"}
 ```
 
-Tokens are cached separately for each requested scope. A successful token request does not establish entitlement to every endpoint. Normalization, extraction, postings, and premium datasets may have additional permissions or quotas. See [Lightcast authentication](https://docs.lightcast.io/lightcast-api/docs/authentication-guide).
+Tokens are cached separately for each credential pair, OAuth endpoint, and requested scope. A successful token request does not establish entitlement to every endpoint. Normalization, extraction, postings, and premium datasets may have additional permissions or quotas. See [Lightcast authentication](https://docs.lightcast.io/lightcast-api/docs/authentication-guide).
+
+See [credential providers](credentials.md) for optional HTTP headers and custom providers backed by an authorized secret store. Header mode never falls back to environment credentials. Local stdio installations keep the default environment mode.
 
 ## Server options
 
