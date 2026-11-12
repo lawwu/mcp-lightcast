@@ -76,6 +76,10 @@ uv run python -m mcp_lightcast.diagnostics --core-lmi --output test-results/core
 
 Both diagnostic commands consume real API quotas. Its report contains only tool outcomes and version metadata.
 
+## Dependency updates
+
+Dependabot patch and minor updates are eligible for automatic squash merge after required checks pass. Major updates remain for manual review. See [dependency maintenance](docs/deployment.md#dependency-maintenance) for the policy and required repository settings.
+
 ## Documentation deployment
 
 The docs use Zensical with custom styling, search, light/dark themes, and a tool reference generated from actual MCP schemas. GitHub Actions builds pull requests and deploys `main` to GitHub Pages. Set **Settings → Pages → Source → GitHub Actions** once. No Lightcast secrets are needed for documentation builds.

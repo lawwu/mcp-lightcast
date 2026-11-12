@@ -22,6 +22,27 @@ Forks should update `site_url`, `repo_url`, and package links. If a deployment w
 
 No Lightcast credentials are needed in GitHub Actions to build or deploy the docs. `.env` is excluded from Git, distributions, and Docker contexts.
 
+## Dependency maintenance
+
+The `Dependabot auto-merge` workflow queues verified Dependabot patch and minor updates for squash merge. Python and GitHub Actions updates are grouped separately; major upgrades are excluded from those groups and require manual review. A group containing a major update is also ineligible because the metadata action reports the highest change in the group.
+
+The workflow only handles non-draft Dependabot branches from this repository targeting `main`. It uses `pull_request_target` for the necessary write permissions and never checks out PR code. It requires exactly one signed Dependabot commit matching the event's head, keeps the metadata action's verification enabled, and pins the merge request to that commit. Additional commits require manual review because the metadata action reads only the first commit. Each new event clears an earlier auto-merge request before revalidating. Human PRs and fork PRs are skipped; missing or unverified metadata cannot enable auto-merge. It does not approve reviews or bypass protection rules.
+
+Repository settings must enable **Allow auto-merge** and squash merging. Branch protection for `main` must require an up-to-date branch and these checks from the GitHub Actions app:
+
+- `Python 3.14`
+- `Python 3.15`
+- `docker`
+- `build` (documentation)
+- `Actions lock`
+- `zizmor`
+
+These requirements apply to all PRs targeting `main`. Keep the protection settings synchronized when renaming jobs or changing the Python matrix. Approval requirements added later remain in force; the workflow does not manufacture an approval. The workflow is restricted to `lawwu/mcp-lightcast`; forks must deliberately update that repository condition and configure their own protections.
+
+The built-in `GITHUB_TOKEN` needs no additional secret, but its merges may not trigger downstream push workflows. After such a merge, run the `Documentation` workflow on `main` to refresh Pages. A dedicated GitHub App token is an option if automatic downstream push workflows become necessary. See [GitHub's workflow-trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
+
+The workflow starts handling new or updated Dependabot PRs once it is merged into `main`. To opt out for a particular PR, disable its auto-merge request in GitHub; a subsequent Dependabot update will re-evaluate eligibility.
+
 ## Local MCP server
 
 ```bash

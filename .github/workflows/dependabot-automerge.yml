@@ -1,0 +1,64 @@
+name: Dependabot auto-merge
+
+on:
+  # Metadata-only bot workflow: no checkout, no PR code, verified commits below.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  automerge:
+    name: Queue eligible Dependabot update
+    if: >-
+      github.repository == 'lawwu/mcp-lightcast' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'dependabot/') &&
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      # This privileged workflow never checks out or executes pull-request code.
+      - name: Clear a previous auto-merge request before revalidating
+        run: |
+          if [ "$(gh pr view "$PR_URL" --json autoMergeRequest --jq '.autoMergeRequest != null')" = true ]; then
+            gh pr merge "$PR_URL" --disable-auto
+          fi
+
+      # fetch-metadata reads the first commit. Reject additional commits so its
+      # metadata describes exactly the signed head that will be queued.
+      - name: Verify the complete PR head
+        run: |
+          gh api --paginate --slurp "repos/$GH_REPO/pulls/$PR_NUMBER/commits" |
+            jq -e 'flatten | length == 1 and
+              .[0].sha == env.PR_HEAD_SHA and
+              .[0].author.login == "dependabot[bot]" and
+              .[0].commit.verification.verified == true' >/dev/null
+
+      # Keep the metadata action's own verification enabled as well.
+      - name: Verify Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v3.1.0
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Enable auto-merge for patch and minor updates
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge "$PR_URL" --auto --squash --match-head-commit "$PR_HEAD_SHA"

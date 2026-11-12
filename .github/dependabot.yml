@@ -9,6 +9,7 @@ updates:
     groups:
       github-actions:
         patterns: ['*']
+        update-types: [minor, patch]
 
   - package-ecosystem: uv
     directory: /
@@ -19,3 +20,4 @@ updates:
     groups:
       python:
         patterns: ['*']
+        update-types: [minor, patch]
