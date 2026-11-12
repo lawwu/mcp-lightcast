@@ -15,11 +15,11 @@ try:
     from config.settings import server_config
 except ImportError:
     # Fallback for when config module is not in the path
-    from pydantic import ConfigDict, Field
-    from pydantic_settings import BaseSettings
+    from pydantic import Field
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 
     class ServerConfig(BaseSettings):
-        model_config = ConfigDict(extra="ignore")
+        model_config = SettingsConfigDict(extra="ignore")
 
         server_name: str = Field(
             default="lightcast-mcp-server", alias="MCP_SERVER_NAME"
@@ -27,7 +27,7 @@ except ImportError:
         log_level: str = Field(default="INFO", alias="LOG_LEVEL")
         mask_error_details: bool = Field(default=True, alias="MASK_ERROR_DETAILS")
 
-    server_config = ServerConfig()
+    server_config = ServerConfig()  # type: ignore[assignment]
 
 from .tools.classification_tools import register_classification_tools
 from .tools.job_postings_tools import register_job_postings_tools
@@ -91,7 +91,7 @@ async def health_check() -> dict:
     """Health check endpoint for the server."""
     try:
         # Test basic functionality
-        from src.mcp_lightcast.auth.oauth import lightcast_auth
+        from .auth.oauth import lightcast_auth
 
         # Try to get a token (this validates our auth configuration)
         token = await lightcast_auth.get_access_token()

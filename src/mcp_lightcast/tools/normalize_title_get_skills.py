@@ -1,6 +1,7 @@
 """Combined tool for title normalization and skills mapping workflow."""
 
-from typing import Any
+from types import TracebackType
+from typing import Any, Self
 
 from pydantic import BaseModel
 
@@ -22,18 +23,23 @@ class NormalizedTitleWithSkills(BaseModel):
 class TitleNormalizationWorkflow:
     """Workflow for normalizing titles and getting associated skills."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.titles_client = TitlesAPIClient()
         self.classification_client = ClassificationAPIClient()
         self.similarity_client = SimilarityAPIClient()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         await self.titles_client.__aenter__()
         await self.classification_client.__aenter__()
         await self.similarity_client.__aenter__()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.titles_client.__aexit__(exc_type, exc_val, exc_tb)
         await self.classification_client.__aexit__(exc_type, exc_val, exc_tb)
         await self.similarity_client.__aexit__(exc_type, exc_val, exc_tb)
@@ -61,7 +67,11 @@ class TitleNormalizationWorkflow:
         Returns:
             NormalizedTitleWithSkills object with complete workflow results
         """
-        workflow_metadata = {"steps_completed": [], "errors": [], "processing_time": {}}
+        workflow_metadata: dict[str, Any] = {
+            "steps_completed": [],
+            "errors": [],
+            "processing_time": {},
+        }
 
         try:
             # Step 1: Normalize the title
@@ -85,7 +95,8 @@ class TitleNormalizationWorkflow:
             try:
                 extracted_skills = (
                     await self.classification_client.extract_skills_from_text(
-                        result_data["title"]["name"]
+                        result_data["title"]["name"],
+                        confidence_threshold=confidence_threshold,
                     )
                 )
 

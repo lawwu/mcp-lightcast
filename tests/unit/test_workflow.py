@@ -4,9 +4,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from src.mcp_lightcast.apis.classification import ConceptMapping, OccupationMapping
-from src.mcp_lightcast.apis.similarity import OccupationSkillMapping
-from src.mcp_lightcast.apis.titles import TitleDetail, TitleNormalizationResult
+from src.mcp_lightcast.apis.classification import (
+    SkillExtractionResult,
+    SkillsExtractionResult,
+)
 from src.mcp_lightcast.tools.normalize_title_get_skills import (
     NormalizedTitleWithSkills,
     TitleNormalizationWorkflow,
@@ -26,290 +27,172 @@ class TestTitleNormalizationWorkflow:
         return titles_client, classification_client, similarity_client
 
     @pytest.fixture
-    def sample_workflow_data(self):
-        """Sample data for workflow testing."""
+    def normalized_title_response(self):
+        """Titles API normalize response, as TitlesAPIClient.normalize_title returns it."""
         return {
-            "normalized_title": TitleNormalizationResult(
-                confidence=0.95,
-                title=TitleDetail(
-                    id="title_123", name="Software Engineer", type="Tech"
-                ),
-            ),
-            "classification_results": [
-                ConceptMapping(
-                    concept="Software Engineer",
-                    occupations=[
-                        OccupationMapping(
-                            id="15-1252.00",
-                            title="Software Developers",
-                            confidence=0.92,
-                            type="onet_soc",
-                        )
-                    ],
-                )
-            ],
-            "occupation_skills": OccupationSkillMapping(
-                occupation_id="15-1252.00",
-                occupation_name="Software Developers",
-                skills=[
-                    {
+            "data": {
+                "confidence": 0.95,
+                "title": {
+                    "id": "title_123",
+                    "name": "Software Engineer",
+                    "type": "Tech",
+                },
+            }
+        }
+
+    @pytest.fixture
+    def extracted_skills(self):
+        """Classification API skills extraction result."""
+        return SkillsExtractionResult(
+            concepts=[
+                SkillExtractionResult(
+                    concept={
                         "id": "KS1200364C9C1LK3V5Q1",
                         "name": "Python",
-                        "type": "Hard Skill",
-                        "importance": 0.85,
+                        "skillType": "Hard Skill",
                     },
-                    {
-                        "id": "KS1200770D9CT9WGXMPS",
-                        "name": "JavaScript",
-                        "type": "Hard Skill",
-                        "importance": 0.78,
-                    },
-                ],
-                total_skills=2,
-            ),
-        }
+                    confidence=0.85,
+                ),
+                SkillExtractionResult(
+                    concept={"id": "KS1200770D9CT9WGXMPS", "name": "JavaScript"},
+                    confidence=0.78,
+                ),
+            ]
+        )
+
+    def _workflow(self, clients):
+        titles_client, classification_client, similarity_client = clients
+        workflow = TitleNormalizationWorkflow()
+        workflow.titles_client = titles_client
+        workflow.classification_client = classification_client
+        workflow.similarity_client = similarity_client
+        return workflow
 
     @pytest.mark.asyncio
     async def test_workflow_success_complete(
-        self, mock_workflow_clients, sample_workflow_data
+        self, mock_workflow_clients, normalized_title_response, extracted_skills
     ):
         """Test complete successful workflow execution."""
         titles_client, classification_client, similarity_client = mock_workflow_clients
+        titles_client.normalize_title.return_value = normalized_title_response
+        classification_client.extract_skills_from_text.return_value = extracted_skills
 
-        # Configure mock responses
-        titles_client.normalize_title.return_value = sample_workflow_data[
-            "normalized_title"
-        ]
-        classification_client.map_concepts.return_value = sample_workflow_data[
-            "classification_results"
-        ]
-        similarity_client.get_occupation_skills.return_value = sample_workflow_data[
-            "occupation_skills"
-        ]
-
-        workflow = TitleNormalizationWorkflow()
-        workflow.titles_client = titles_client
-        workflow.classification_client = classification_client
-        workflow.similarity_client = similarity_client
-
+        workflow = self._workflow(mock_workflow_clients)
         result = await workflow.normalize_title_and_get_skills("sr software dev")
 
-        # Verify result structure
         assert isinstance(result, NormalizedTitleWithSkills)
         assert result.raw_title == "sr software dev"
-        assert result.normalized_title["name"] == "Software Engineer"
-        assert result.normalized_title["confidence"] == 0.95
-        assert len(result.occupation_mappings) == 1
-        assert result.occupation_mappings[0]["occupation_id"] == "15-1252.00"
-        assert len(result.skills) == 2
-
-        # Verify workflow metadata
-        assert "workflow_complete" in result.workflow_metadata["steps_completed"]
-        assert len(result.workflow_metadata["errors"]) == 0
-        assert result.workflow_metadata["summary"]["unique_skills_count"] == 2
-
-        # Verify API calls were made
-        titles_client.normalize_title.assert_called_once_with(
-            "sr software dev", "2023.4"
-        )
-        classification_client.map_concepts.assert_called_once()
-        similarity_client.get_occupation_skills.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_workflow_skill_deduplication(self, mock_workflow_clients):
-        """Test that duplicate skills are properly deduplicated."""
-        titles_client, classification_client, similarity_client = mock_workflow_clients
-
-        # Setup normalized title
-        titles_client.normalize_title.return_value = TitleNormalizationResult(
-            confidence=0.95,
-            title=TitleDetail(id="title_123", name="Software Engineer", type="Tech"),
-        )
-
-        # Setup multiple occupation mappings
-        classification_client.map_concepts.return_value = [
-            ConceptMapping(
-                concept="Software Engineer",
-                occupations=[
-                    OccupationMapping(
-                        id="15-1252.00",
-                        title="Software Developers",
-                        confidence=0.92,
-                        type="onet_soc",
-                    ),
-                    OccupationMapping(
-                        id="15-1253.00",
-                        title="Software Quality Assurance Analysts",
-                        confidence=0.88,
-                        type="onet_soc",
-                    ),
-                ],
-            )
+        assert result.normalized_title == {
+            "id": "title_123",
+            "name": "Software Engineer",
+            "confidence": 0.95,
+            "type": "Tech",
+        }
+        assert result.occupation_mappings == []
+        assert result.skills == [
+            {
+                "id": "KS1200364C9C1LK3V5Q1",
+                "name": "Python",
+                "confidence": 0.85,
+                "type": "Hard Skill",
+            },
+            {
+                "id": "KS1200770D9CT9WGXMPS",
+                "name": "JavaScript",
+                "confidence": 0.78,
+                "type": "Unknown",
+            },
         ]
 
-        # Setup overlapping skills between occupations
-        def mock_get_occupation_skills(occupation_id, **kwargs):
-            if occupation_id == "15-1252.00":
-                return OccupationSkillMapping(
-                    occupation_id=occupation_id,
-                    occupation_name="Software Developers",
-                    skills=[
-                        {"id": "skill_1", "name": "Python", "type": "Hard Skill"},
-                        {"id": "skill_2", "name": "JavaScript", "type": "Hard Skill"},
-                    ],
-                    total_skills=2,
-                )
-            else:
-                return OccupationSkillMapping(
-                    occupation_id=occupation_id,
-                    occupation_name="Software Quality Assurance Analysts",
-                    skills=[
-                        {
-                            "id": "skill_1",
-                            "name": "Python",
-                            "type": "Hard Skill",
-                        },  # Duplicate
-                        {"id": "skill_3", "name": "Testing", "type": "Hard Skill"},
-                    ],
-                    total_skills=2,
-                )
+        assert result.workflow_metadata["steps_completed"] == [
+            "title_normalization",
+            "skills_extraction",
+            "workflow_complete",
+        ]
+        assert result.workflow_metadata["errors"] == []
+        assert result.workflow_metadata["summary"] == {
+            "normalized_title_confidence": 0.95,
+            "skills_count": 2,
+        }
 
-        similarity_client.get_occupation_skills.side_effect = mock_get_occupation_skills
-
-        workflow = TitleNormalizationWorkflow()
-        workflow.titles_client = titles_client
-        workflow.classification_client = classification_client
-        workflow.similarity_client = similarity_client
-
-        result = await workflow.normalize_title_and_get_skills("software engineer")
-
-        # Should have 3 unique skills (Python, JavaScript, Testing)
-        assert len(result.skills) == 3
-        skill_names = {skill["name"] for skill in result.skills}
-        assert skill_names == {"Python", "JavaScript", "Testing"}
-
-        # Python skill should have source_occupations from both occupations
-        python_skill = next(
-            skill for skill in result.skills if skill["name"] == "Python"
+        titles_client.normalize_title.assert_called_once_with(
+            "sr software dev", "latest"
         )
-        assert len(python_skill["source_occupations"]) == 2
+        classification_client.extract_skills_from_text.assert_called_once_with(
+            "Software Engineer", confidence_threshold=0.5
+        )
+        similarity_client.get_occupation_skills.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_workflow_unwrapped_normalize_response(
+        self, mock_workflow_clients, extracted_skills
+    ):
+        """A normalize response without a "data" wrapper is used as is."""
+        titles_client, classification_client, _ = mock_workflow_clients
+        titles_client.normalize_title.return_value = {
+            "confidence": 0.9,
+            "title": {"id": "title_456", "name": "Data Scientist"},
+        }
+        classification_client.extract_skills_from_text.return_value = extracted_skills
+
+        workflow = self._workflow(mock_workflow_clients)
+        result = await workflow.normalize_title_and_get_skills("data scientist")
+
+        assert result.normalized_title["id"] == "title_456"
+        assert result.normalized_title["type"] is None
+        assert len(result.skills) == 2
 
     @pytest.mark.asyncio
     async def test_workflow_partial_failure_skills(
-        self, mock_workflow_clients, sample_workflow_data
+        self, mock_workflow_clients, normalized_title_response
     ):
-        """Test workflow when skills retrieval fails for some occupations."""
-        titles_client, classification_client, similarity_client = mock_workflow_clients
+        """A skills extraction failure is recorded, and the normalized title still returned."""
+        titles_client, classification_client, _ = mock_workflow_clients
+        titles_client.normalize_title.return_value = normalized_title_response
+        classification_client.extract_skills_from_text.side_effect = Exception(
+            "API error"
+        )
 
-        titles_client.normalize_title.return_value = sample_workflow_data[
-            "normalized_title"
-        ]
-
-        # Multiple occupation mappings
-        classification_client.map_concepts.return_value = [
-            ConceptMapping(
-                concept="Software Engineer",
-                occupations=[
-                    OccupationMapping(
-                        id="15-1252.00",
-                        title="Software Developers",
-                        confidence=0.92,
-                        type="onet_soc",
-                    ),
-                    OccupationMapping(
-                        id="15-1253.00",
-                        title="Software Quality Assurance Analysts",
-                        confidence=0.88,
-                        type="onet_soc",
-                    ),
-                ],
-            )
-        ]
-
-        # First occupation succeeds, second fails
-        def mock_get_occupation_skills(occupation_id, **kwargs):
-            if occupation_id == "15-1252.00":
-                return sample_workflow_data["occupation_skills"]
-            else:
-                raise Exception("API error for this occupation")
-
-        similarity_client.get_occupation_skills.side_effect = mock_get_occupation_skills
-
-        workflow = TitleNormalizationWorkflow()
-        workflow.titles_client = titles_client
-        workflow.classification_client = classification_client
-        workflow.similarity_client = similarity_client
-
+        workflow = self._workflow(mock_workflow_clients)
         result = await workflow.normalize_title_and_get_skills("software engineer")
 
-        # Should still complete with partial results
-        assert len(result.occupation_mappings) == 2
-        assert len(result.skills) == 2  # Only from successful occupation
-        assert len(result.workflow_metadata["errors"]) == 1
-        assert (
-            "Failed to get skills for 15-1253.00"
-            in result.workflow_metadata["errors"][0]
-        )
+        assert result.normalized_title["name"] == "Software Engineer"
+        assert result.skills == []
+        assert result.workflow_metadata["errors"] == [
+            "Failed to extract skills: API error"
+        ]
+        assert "workflow_complete" not in result.workflow_metadata["steps_completed"]
 
     @pytest.mark.asyncio
     async def test_workflow_simple_version(
-        self, mock_workflow_clients, sample_workflow_data
+        self, mock_workflow_clients, normalized_title_response, extracted_skills
     ):
         """Test simplified workflow version."""
-        titles_client, classification_client, similarity_client = mock_workflow_clients
+        titles_client, classification_client, _ = mock_workflow_clients
+        titles_client.normalize_title.return_value = normalized_title_response
+        classification_client.extract_skills_from_text.return_value = extracted_skills
 
-        titles_client.normalize_title.return_value = sample_workflow_data[
-            "normalized_title"
-        ]
-        classification_client.map_concepts.return_value = sample_workflow_data[
-            "classification_results"
-        ]
-        similarity_client.get_occupation_skills.return_value = sample_workflow_data[
-            "occupation_skills"
-        ]
+        workflow = self._workflow(mock_workflow_clients)
+        result = await workflow.get_title_skills_simple("software engineer", limit=1)
 
-        workflow = TitleNormalizationWorkflow()
-        workflow.titles_client = titles_client
-        workflow.classification_client = classification_client
-        workflow.similarity_client = similarity_client
-
-        result = await workflow.get_title_skills_simple("software engineer", limit=10)
-
-        # Verify simplified structure
-        assert "normalized_title" in result
-        assert "confidence" in result
-        assert "top_occupations" in result
-        assert "skills" in result
-        assert "skills_count" in result
-
-        assert result["normalized_title"] == "Software Engineer"
-        assert result["confidence"] == 0.95
-        assert len(result["top_occupations"]) == 1
-        assert result["top_occupations"][0] == "Software Developers"
-        assert len(result["skills"]) <= 10
+        assert result == {
+            "normalized_title": "Software Engineer",
+            "confidence": 0.95,
+            "top_occupations": [],
+            "skills": [{"name": "Python", "type": "Hard Skill", "category": None}],
+            "skills_count": 2,
+        }
 
     @pytest.mark.asyncio
     async def test_workflow_custom_parameters(
-        self, mock_workflow_clients, sample_workflow_data
+        self, mock_workflow_clients, normalized_title_response, extracted_skills
     ):
         """Test workflow with custom parameters."""
-        titles_client, classification_client, similarity_client = mock_workflow_clients
+        titles_client, classification_client, _ = mock_workflow_clients
+        titles_client.normalize_title.return_value = normalized_title_response
+        classification_client.extract_skills_from_text.return_value = extracted_skills
 
-        titles_client.normalize_title.return_value = sample_workflow_data[
-            "normalized_title"
-        ]
-        classification_client.map_concepts.return_value = sample_workflow_data[
-            "classification_results"
-        ]
-        similarity_client.get_occupation_skills.return_value = sample_workflow_data[
-            "occupation_skills"
-        ]
-
-        workflow = TitleNormalizationWorkflow()
-        workflow.titles_client = titles_client
-        workflow.classification_client = classification_client
-        workflow.similarity_client = similarity_client
-
+        workflow = self._workflow(mock_workflow_clients)
         await workflow.normalize_title_and_get_skills(
             raw_title="software engineer",
             max_occupations=3,
@@ -319,20 +202,11 @@ class TestTitleNormalizationWorkflow:
             version="2024.1",
         )
 
-        # Verify custom parameters were passed to API calls
-        classification_client.map_concepts.assert_called_with(
-            concepts=["Software Engineer"],
-            target_taxonomy="onet_soc",
-            limit=3,
-            confidence_threshold=0.8,
-            version="2024.1",
+        titles_client.normalize_title.assert_called_once_with(
+            "software engineer", "2024.1"
         )
-
-        similarity_client.get_occupation_skills.assert_called_with(
-            occupation_id="15-1252.00",
-            limit=50,
-            skill_type="Hard Skill",
-            version="2024.1",
+        classification_client.extract_skills_from_text.assert_called_once_with(
+            "Software Engineer", confidence_threshold=0.8
         )
 
     @pytest.mark.asyncio

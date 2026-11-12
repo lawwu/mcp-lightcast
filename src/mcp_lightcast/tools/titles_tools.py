@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 from ..apis.titles import TitlesAPIClient
 
 
-def register_titles_tools(mcp: FastMCP):
+def register_titles_tools(mcp: FastMCP) -> None:
     """Register core titles-related MCP tools."""
 
     @mcp.tool

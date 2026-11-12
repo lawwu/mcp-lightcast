@@ -28,7 +28,7 @@ class OccupationSkillMapping(BaseModel):
 class SimilarityAPIClient(BaseLightcastClient):
     """Client for Lightcast Similarity API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(api_name="similarity")
 
     # Working endpoints discovered from testing
@@ -85,7 +85,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             List of similar occupations with similarity scores
         """
-        data = {"input": soc_code, "limit": limit}
+        data: dict[str, Any] = {"input": soc_code, "limit": limit}
         response = await self.post("models/soc", data=data)
         return response.get("data", [])
 
@@ -102,7 +102,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             List of similar occupations with similarity scores
         """
-        data = {"input": lot_id, "limit": limit}
+        data: dict[str, Any] = {"input": lot_id, "limit": limit}
         response = await self.post("models/lotocc", data=data)
         return response.get("data", [])
 
@@ -119,7 +119,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             List of similar occupations with similarity scores
         """
-        data = {"input": onet_code, "limit": limit}
+        data: dict[str, Any] = {"input": onet_code, "limit": limit}
         response = await self.post("models/onet", data=data)
         return response.get("data", [])
 
@@ -136,7 +136,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             List of similar skills with similarity scores
         """
-        data = {"input": skill_ids, "limit": limit}
+        data: dict[str, Any] = {"input": skill_ids, "limit": limit}
         response = await self.post("models/skill", data=data)
         return response.get("data", [])
 
@@ -148,7 +148,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         version: str = "latest",
     ) -> list[SimilarityResult]:
         """Find occupations similar to a given occupation using SOC model."""
-        data = {"input": occupation_id, "limit": limit}
+        data: dict[str, Any] = {"input": occupation_id, "limit": limit}
 
         response = await self._make_request("POST", "models/soc", data=data)
 
@@ -173,7 +173,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         version: str = "latest",
     ) -> list[SimilarityResult]:
         """Find skills similar to a given skill using skill model."""
-        data = {"input": skill_id, "limit": limit}
+        data: dict[str, Any] = {"input": skill_id, "limit": limit}
 
         response = await self._make_request("POST", "models/skill", data=data)
 
@@ -198,7 +198,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         version: str = "latest",
     ) -> OccupationSkillMapping:
         """Get skills associated with an occupation using SOC-skill model."""
-        data = {"input": occupation_id, "limit": limit}
+        data: dict[str, Any] = {"input": occupation_id, "limit": limit}
 
         response = await self._make_request("POST", "models/soc-skill", data=data)
 
@@ -219,7 +219,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         version: str = "latest",
     ) -> list[SimilarityResult]:
         """Find occupations that match a set of skills."""
-        data = {
+        data: dict[str, Any] = {
             "skill_ids": skill_ids,
             "limit": limit,
             "match_threshold": match_threshold,
@@ -239,7 +239,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         version: str = "latest",
     ) -> dict[str, Any]:
         """Calculate skill gaps between current skills and target occupation."""
-        data = {
+        data: dict[str, Any] = {
             "current_skills": current_skills,
             "target_occupation_id": target_occupation_id,
         }
@@ -253,7 +253,10 @@ class SimilarityAPIClient(BaseLightcastClient):
         self, occupation_id_1: str, occupation_id_2: str, version: str = "latest"
     ) -> dict[str, Any]:
         """Compare two occupations and their skill overlap."""
-        params = {"occupation_1": occupation_id_1, "occupation_2": occupation_id_2}
+        params: dict[str, Any] = {
+            "occupation_1": occupation_id_1,
+            "occupation_2": occupation_id_2,
+        }
 
         response = await self.get(
             f"similarity/versions/{version}/occupations/compare",
@@ -276,7 +279,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             Skill transferability analysis
         """
-        params = {
+        params: dict[str, Any] = {
             "from_occupation": from_occupation_id,
             "to_occupation": to_occupation_id,
         }
@@ -305,7 +308,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             List of occupations ranked by similarity
         """
-        data = {
+        data: dict[str, Any] = {
             "target_occupation": target_occupation_id,
             "candidates": candidate_occupation_ids,
         }
@@ -338,7 +341,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             List of potential career transitions
         """
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if difficulty_level:
             params["difficulty"] = difficulty_level
         if industry_filter:
@@ -370,7 +373,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             Skill clustering analysis
         """
-        data = {"skill_ids": skill_ids, "method": cluster_method}
+        data: dict[str, Any] = {"skill_ids": skill_ids, "method": cluster_method}
         if num_clusters:
             data["num_clusters"] = num_clusters
 
@@ -398,7 +401,7 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             List of substitute skills
         """
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if context_occupation_id:
             params["context_occupation"] = context_occupation_id
 
@@ -426,7 +429,10 @@ class SimilarityAPIClient(BaseLightcastClient):
         Returns:
             Occupation similarity matrix
         """
-        data = {"occupation_ids": occupation_ids, "metric": similarity_metric}
+        data: dict[str, Any] = {
+            "occupation_ids": occupation_ids,
+            "metric": similarity_metric,
+        }
 
         response = await self.post(
             f"similarity/versions/{version}/occupations/matrix",

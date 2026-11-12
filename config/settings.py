@@ -1,18 +1,13 @@
 """Configuration settings for MCP Lightcast server."""
 
-import os
-from typing import Optional
-try:
-    from pydantic_settings import BaseSettings
-    from pydantic import Field, ConfigDict
-except ImportError:
-    from pydantic import BaseSettings, Field, ConfigDict
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class LightcastConfig(BaseSettings):
     """Configuration for Lightcast API."""
     
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore"  # Ignore extra environment variables
@@ -29,7 +24,7 @@ class LightcastConfig(BaseSettings):
 class ServerConfig(BaseSettings):
     """Configuration for MCP server."""
     
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore"  # Ignore extra environment variables

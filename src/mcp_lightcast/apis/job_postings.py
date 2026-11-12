@@ -76,7 +76,7 @@ class JobMarketTrends(BaseModel):
 class JobPostingsAPIClient(BaseLightcastClient):
     """Client for Lightcast Job Postings API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(api_name="job_postings")
 
     async def search_job_postings(
@@ -116,7 +116,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Returns:
             Job postings search results
         """
-        data = {"limit": limit, "offset": offset}
+        data: dict[str, Any] = {"limit": limit, "offset": offset}
 
         if query:
             data["query"] = query
@@ -165,7 +165,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Returns:
             Detailed job posting information
         """
-        params = {}
+        params: dict[str, Any] = {}
         if include_skills:
             params["include_skills"] = "true"
         if include_company_info:
@@ -217,7 +217,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Returns:
             Job posting statistics
         """
-        data = {}
+        data: dict[str, Any] = {}
         if occupation_ids:
             data["occupation_ids"] = occupation_ids
         if location:
@@ -268,7 +268,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Returns:
             List of skill demand data
         """
-        data = {"limit": limit}
+        data: dict[str, Any] = {"limit": limit}
         if occupation_ids:
             data["occupation_ids"] = occupation_ids
         if location:
@@ -320,7 +320,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Returns:
             List of salary insights
         """
-        data = {}
+        data: dict[str, Any] = {}
         if occupation_ids:
             data["occupation_ids"] = occupation_ids
         if skill_ids:
@@ -375,7 +375,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Returns:
             Job market trends analysis
         """
-        data = {}
+        data: dict[str, Any] = {}
         if occupation_ids:
             data["occupation_ids"] = occupation_ids
         if location:
@@ -449,7 +449,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Returns:
             Company insights data
         """
-        params = {}
+        params: dict[str, Any] = {}
         if include_postings:
             params["include_postings"] = "true"
         if include_skills:
@@ -488,7 +488,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Get summary of job postings using rankings endpoint.
         """
         # Use minimal filter for skills rankings
-        data = {
+        data: dict[str, Any] = {
             "filter": {"when": {"start": "2024-01", "end": "2024-12"}},
             "rank": {"by": "unique_postings", "limit": 100},
         }
@@ -522,7 +522,7 @@ class JobPostingsAPIClient(BaseLightcastClient):
         Get top skills from job postings using rankings endpoint.
         """
         # Use minimal filter for skills rankings
-        data = {
+        data: dict[str, Any] = {
             "filter": {"when": {"start": "2024-01", "end": "2024-12"}},
             "rank": {"by": "unique_postings", "limit": limit},
         }

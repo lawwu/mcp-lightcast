@@ -24,7 +24,7 @@ class SkillsSource(str, Enum):
 class UnifiedSkillsResult:
     """Result container for unified skills extraction."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.title: str | None = None
         self.normalized_title: dict[str, Any] | None = None
         self.title_id: str | None = None
@@ -54,7 +54,7 @@ class UnifiedSkillsResult:
 class UnifiedSkillsExtractor:
     """Unified tool that normalizes titles and extracts skills from multiple sources."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.titles_client = TitlesAPIClient()
         self.skills_client = SkillsAPIClient()
         self.similarity_client = SimilarityAPIClient()
@@ -244,13 +244,7 @@ class UnifiedSkillsExtractor:
             query=f"title_id:{title_id}", limit=n_skills
         )
 
-        skills = []
-        if skills_results and "data" in skills_results:
-            skills = [
-                skill.get("name", "")
-                for skill in skills_results["data"][:n_skills]
-                if skill.get("name")
-            ]
+        skills = [skill.name for skill in skills_results[:n_skills] if skill.name]
 
         return skills
 

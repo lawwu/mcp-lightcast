@@ -9,7 +9,7 @@ from ..apis.skills import SkillsAPIClient
 from .normalize_title_get_skills import TitleNormalizationWorkflow
 
 
-def register_workflow_tools(mcp: FastMCP):
+def register_workflow_tools(mcp: FastMCP) -> None:
     """Register core workflow-related MCP tools."""
 
     @mcp.tool
@@ -41,7 +41,7 @@ def register_workflow_tools(mcp: FastMCP):
             Complete workflow results with normalized title and associated skills
         """
         async with TitleNormalizationWorkflow() as workflow:
-            return await workflow.normalize_title_and_get_skills(
+            result = await workflow.normalize_title_and_get_skills(
                 raw_title,
                 max_occupations,
                 max_skills_per_occupation,
@@ -49,6 +49,7 @@ def register_workflow_tools(mcp: FastMCP):
                 confidence_threshold,
                 version,
             )
+            return result.model_dump()
 
     @mcp.tool
     async def analyze_job_posting_skills(
@@ -74,7 +75,7 @@ def register_workflow_tools(mcp: FastMCP):
         Returns:
             Combined skills analysis from both title and description
         """
-        results = {
+        results: dict[str, Any] = {
             "job_title": job_title,
             "title_skills": [],
             "description_skills": [],

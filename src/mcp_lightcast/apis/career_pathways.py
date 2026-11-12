@@ -24,8 +24,8 @@ class CareerPathway(BaseModel):
 
     pathway_id: str
     pathway_name: str
-    starting_occupation: CareerStep
-    target_occupation: CareerStep
+    starting_occupation: CareerStep | None = None
+    target_occupation: CareerStep | None = None
     intermediate_steps: list[CareerStep]
     total_duration: int | None = None  # months
     difficulty_score: float | None = None
@@ -67,7 +67,7 @@ class IndustryTransition(BaseModel):
 class CareerPathwaysAPIClient(BaseLightcastClient):
     """Client for Lightcast Career Pathways API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(api_name="career_pathways")
 
     # Working endpoints discovered from testing
@@ -163,7 +163,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         Returns:
             Career pathway analysis
         """
-        data = {
+        data: dict[str, Any] = {
             "from_occupation": from_occupation_id,
             "to_occupation": to_occupation_id,
             "max_steps": max_steps,
@@ -252,7 +252,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         Returns:
             List of discovered career pathways
         """
-        params = {"pathway_type": pathway_type, "limit": limit}
+        params: dict[str, Any] = {"pathway_type": pathway_type, "limit": limit}
         if career_level:
             params["career_level"] = career_level
         if industry_filter:
@@ -315,7 +315,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         Returns:
             Skill transition mapping data
         """
-        params = {}
+        params: dict[str, Any] = {}
         if skill_level:
             params["skill_level"] = skill_level
 
@@ -349,7 +349,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         Returns:
             List of industry transitions
         """
-        data = {"limit": limit}
+        data: dict[str, Any] = {"limit": limit}
         if from_industry_ids:
             data["from_industries"] = from_industry_ids
         if to_industry_ids:
@@ -404,7 +404,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         Returns:
             Personalized pathway recommendations
         """
-        data = {
+        data: dict[str, Any] = {
             "current_occupation": current_occupation_id,
             "career_goals": career_goals,
         }
@@ -437,7 +437,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         Returns:
             Pathway feasibility analysis
         """
-        data = {"pathway_steps": pathway_steps}
+        data: dict[str, Any] = {"pathway_steps": pathway_steps}
         if constraints:
             data["constraints"] = constraints
 
@@ -467,7 +467,7 @@ class CareerPathwaysAPIClient(BaseLightcastClient):
         Returns:
             List of trending pathways
         """
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if industry_id:
             params["industry"] = industry_id
         if region:

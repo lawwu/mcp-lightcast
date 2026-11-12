@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 from ..apis.classification import ClassificationAPIClient
 
 
-def register_classification_tools(mcp: FastMCP):
+def register_classification_tools(mcp: FastMCP) -> None:
     """Register core classification-related MCP tools."""
 
     @mcp.tool

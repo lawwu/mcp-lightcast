@@ -8,7 +8,7 @@ from ..apis.similarity import SimilarityAPIClient
 from ..apis.skills import SkillsAPIClient
 
 
-def register_skills_tools(mcp: FastMCP):
+def register_skills_tools(mcp: FastMCP) -> None:
     """Register core skills-related MCP tools."""
 
     @mcp.tool
@@ -173,7 +173,7 @@ def register_skills_tools(mcp: FastMCP):
         """
         async with SimilarityAPIClient() as client:
             results = await client.get_similar_skills(skill_id, limit)
-            return results
+            return [result.model_dump() for result in results]
 
     @mcp.tool
     async def get_skills_metadata(version: str = "latest") -> dict[str, Any]:

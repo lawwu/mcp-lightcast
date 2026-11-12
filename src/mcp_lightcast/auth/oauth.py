@@ -15,11 +15,11 @@ sys.path.insert(0, str(project_root))
 try:
     from config.settings import lightcast_config
 except ImportError:
-    from pydantic import ConfigDict, Field
-    from pydantic_settings import BaseSettings
+    from pydantic import Field
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 
     class LightcastConfig(BaseSettings):
-        model_config = ConfigDict(extra="ignore")
+        model_config = SettingsConfigDict(extra="ignore")
 
         client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
         client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
@@ -29,7 +29,7 @@ except ImportError:
         )
         oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
 
-    lightcast_config = LightcastConfig()
+    lightcast_config = LightcastConfig()  # type: ignore[assignment]
 
 
 class TokenResponse(BaseModel):
@@ -44,7 +44,7 @@ class TokenResponse(BaseModel):
 class LightcastAuth:
     """OAuth2 authentication handler for Lightcast API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client_id = lightcast_config.client_id
         self.client_secret = lightcast_config.client_secret
         self.oauth_url = lightcast_config.oauth_url
@@ -60,10 +60,10 @@ class LightcastAuth:
     async def get_access_token(self) -> str:
         """Get a valid access token, refreshing if necessary."""
         async with self._lock:
-            if self._is_token_valid():
-                return self._token
-
-            await self._refresh_token()
+            if not self._is_token_valid():
+                await self._refresh_token()
+            if self._token is None:
+                raise AuthenticationError("No access token available")
             return self._token
 
     def _is_token_valid(self) -> bool:

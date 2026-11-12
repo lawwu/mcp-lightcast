@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from .auth.oauth import lightcast_auth
 
 
-def setup_logging(level: str, quiet: bool = False):
+def setup_logging(level: str, quiet: bool = False) -> None:
     """Set up logging configuration."""
     if quiet:
         logging.disable(logging.CRITICAL)
@@ -69,7 +69,7 @@ def main(
     quiet: bool = False,
     port: int = 3000,
     validate_config: bool = False,
-):
+) -> None:
     """
     MCP server for Lightcast API integration.
 
@@ -99,11 +99,11 @@ def main(
         from config.settings import lightcast_config
     except ImportError:
         # Fallback configuration
-        from pydantic import ConfigDict, Field
-        from pydantic_settings import BaseSettings
+        from pydantic import Field
+        from pydantic_settings import BaseSettings, SettingsConfigDict
 
         class LightcastConfig(BaseSettings):
-            model_config = ConfigDict(extra="ignore")
+            model_config = SettingsConfigDict(extra="ignore")
             client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
             client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
             base_url: str = Field(
@@ -116,7 +116,7 @@ def main(
             oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
             rate_limit_per_hour: int = Field(default=1000, alias="LIGHTCAST_RATE_LIMIT")
 
-        lightcast_config = LightcastConfig()
+        lightcast_config = LightcastConfig()  # type: ignore[assignment]
 
     if not lightcast_config.client_id or not lightcast_config.client_secret:
         click.echo("❌ Error: Missing required environment variables:", err=True)
@@ -132,7 +132,7 @@ def main(
 
     if validate_config:
         # Test authentication
-        async def test_auth():
+        async def test_auth() -> bool:
             try:
                 token = await lightcast_auth.get_access_token()
                 return bool(token)
@@ -158,7 +158,7 @@ def main(
 
     try:
         # Test authentication on startup
-        async def startup_check():
+        async def startup_check() -> bool:
             try:
                 await lightcast_auth.get_access_token()
                 if not quiet:

@@ -21,6 +21,8 @@ class TitleDetail(BaseModel):
     id: str
     name: str
     type: str | None = None
+    pluralName: str | None = None
+    singularName: str | None = None
     parent: dict[str, Any] | None = None
     children: list[dict[str, Any]] | None = None
 
@@ -52,7 +54,7 @@ class TitlesGeneralMetadata(BaseModel):
 class TitlesAPIClient(BaseLightcastClient):
     """Client for Lightcast Titles API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(api_name="titles")
 
     async def search_titles(

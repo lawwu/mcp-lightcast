@@ -2,7 +2,8 @@
 
 import sys
 from pathlib import Path
-from typing import Any
+from types import TracebackType
+from typing import Any, Self
 
 import httpx
 
@@ -13,11 +14,11 @@ sys.path.insert(0, str(project_root))
 try:
     from config.settings import lightcast_config
 except ImportError:
-    from pydantic import ConfigDict, Field
-    from pydantic_settings import BaseSettings
+    from pydantic import Field
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 
     class LightcastConfig(BaseSettings):
-        model_config = ConfigDict(extra="ignore")
+        model_config = SettingsConfigDict(extra="ignore")
 
         client_id: str = Field(default="", alias="LIGHTCAST_CLIENT_ID")
         client_secret: str = Field(default="", alias="LIGHTCAST_CLIENT_SECRET")
@@ -30,7 +31,7 @@ except ImportError:
         )
         oauth_scope: str = Field(default="emsi_open", alias="LIGHTCAST_OAUTH_SCOPE")
 
-    lightcast_config = LightcastConfig()
+    lightcast_config = LightcastConfig()  # type: ignore[assignment]
 
 from ..auth.oauth import AuthenticationError, lightcast_auth
 
@@ -100,10 +101,15 @@ class BaseLightcastClient:
             limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
         )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.client.aclose()
 
     async def _make_request(

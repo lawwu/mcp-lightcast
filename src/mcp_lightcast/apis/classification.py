@@ -58,7 +58,7 @@ class BulkClassificationRequest(BaseModel):
 class ClassificationAPIClient(BaseLightcastClient):
     """Client for Lightcast Classification API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(api_name="classification")
 
     async def get_version_metadata(self, version: str = "2025.8") -> dict[str, Any]:

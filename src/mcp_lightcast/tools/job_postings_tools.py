@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 from ..apis.job_postings import JobPostingsAPIClient
 
 
-def register_job_postings_tools(mcp: FastMCP):
+def register_job_postings_tools(mcp: FastMCP) -> None:
     """Register core job postings-related MCP tools."""
 
     @mcp.tool
@@ -17,7 +17,7 @@ def register_job_postings_tools(mcp: FastMCP):
         occupation_ids: list[str] | None = None,
         limit: int = 10,
         version: str = "latest",
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, Any]:
         """
         Search job postings in real-time job market data.
 
@@ -29,11 +29,15 @@ def register_job_postings_tools(mcp: FastMCP):
             version: API version to use (default: "latest")
 
         Returns:
-            List of job postings with their details
+            Job postings search results (the API's `data` object)
         """
         async with JobPostingsAPIClient() as client:
-            return await client.search_postings(
-                query, location, occupation_ids, limit, version
+            return await client.search_job_postings(
+                query=query,
+                occupation_ids=occupation_ids,
+                location=location,
+                limit=limit,
+                version=version,
             )
 
     @mcp.tool
@@ -51,7 +55,8 @@ def register_job_postings_tools(mcp: FastMCP):
             Detailed job posting information
         """
         async with JobPostingsAPIClient() as client:
-            return await client.get_posting_details(posting_id, version)
+            posting = await client.get_job_posting_details(posting_id, version=version)
+            return posting.model_dump()
 
     @mcp.tool
     async def get_posting_statistics(

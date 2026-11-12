@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 from ..apis.occupation_benchmark import OccupationBenchmarkAPIClient
 
 
-def register_occupation_benchmark_tools(mcp: FastMCP):
+def register_occupation_benchmark_tools(mcp: FastMCP) -> None:
     """Register core occupation benchmark-related MCP tools."""
 
     @mcp.tool

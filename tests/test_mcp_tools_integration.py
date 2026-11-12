@@ -32,16 +32,31 @@ except ImportError:
 
 from src.mcp_lightcast.server import mcp
 
+PLACEHOLDER_CLIENT_IDS = {"test_client_id"}
+# These only inspect the server's registrations and need no API access.
+OFFLINE_TESTS = {
+    "test_server_resources",
+    "test_tool_registration",
+    "test_resource_registration",
+}
+
 
 class TestMCPToolsIntegration:
     """Integration tests for MCP tools functionality."""
 
     @pytest.fixture(autouse=True)
-    def check_credentials(self):
+    def check_credentials(self, request):
         """Check if API credentials are configured before running tests."""
+        if request.node.name in OFFLINE_TESTS:
+            return
         client_id = os.getenv("LIGHTCAST_CLIENT_ID")
         client_secret = os.getenv("LIGHTCAST_CLIENT_SECRET")
 
+        # CI sets placeholder credentials for the unit tests; these tests need real ones.
+        if client_id in PLACEHOLDER_CLIENT_IDS:
+            pytest.skip(
+                "Placeholder API credentials (as set in CI); these tests call the real API."
+            )
         if not client_id or not client_secret:
             pytest.skip(
                 "API credentials not configured. Set LIGHTCAST_CLIENT_ID and LIGHTCAST_CLIENT_SECRET environment variables."

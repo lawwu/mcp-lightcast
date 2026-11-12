@@ -62,7 +62,7 @@ class RegionalBenchmark(BaseModel):
 class OccupationBenchmarkAPIClient(BaseLightcastClient):
     """Client for Lightcast Occupation Benchmark API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(api_name="occupation_benchmark")
 
     # Working endpoints discovered from testing
@@ -136,7 +136,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         Returns:
             Occupation benchmark data
         """
-        params = {}
+        params: dict[str, Any] = {}
         if metrics:
             params["metrics"] = ",".join(metrics)
         if region:
@@ -186,7 +186,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         Returns:
             List of salary benchmarks
         """
-        data = {"occupation_ids": occupation_ids}
+        data: dict[str, Any] = {"occupation_ids": occupation_ids}
         if region:
             data["region"] = region
         if experience_level:
@@ -237,13 +237,13 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         Returns:
             List of skill demand benchmarks
         """
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if region:
             params["region"] = region
         if time_period:
             params["time_period"] = time_period
 
-        data = {}
+        data: dict[str, Any] = {}
         if skill_ids:
             data["skill_ids"] = skill_ids
         if occupation_filter:
@@ -290,7 +290,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         Returns:
             Occupation comparison data
         """
-        data = {"occupation_ids": occupation_ids, "metrics": metrics}
+        data: dict[str, Any] = {"occupation_ids": occupation_ids, "metrics": metrics}
         if region:
             data["region"] = region
 
@@ -320,7 +320,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         Returns:
             List of regional benchmarks
         """
-        params = {"metric_type": metric_type}
+        params: dict[str, Any] = {"metric_type": metric_type}
         if regions:
             params["regions"] = ",".join(regions)
         if occupation_filter:
@@ -370,7 +370,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         Returns:
             Employment trend data
         """
-        params = {}
+        params: dict[str, Any] = {}
         if years:
             params["years"] = ",".join(map(str, years))
         if region:
@@ -402,7 +402,7 @@ class OccupationBenchmarkAPIClient(BaseLightcastClient):
         Returns:
             Industry benchmark data
         """
-        data = {"industry_ids": industry_ids, "metrics": metrics}
+        data: dict[str, Any] = {"industry_ids": industry_ids, "metrics": metrics}
         if region:
             data["region"] = region
 

@@ -94,7 +94,8 @@ ignore = ["E501"]  # Line too long
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+# API clients return parsed JSON (Any) as dict/list; flagging each return adds only casts
+warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = true
 strict_optional = true

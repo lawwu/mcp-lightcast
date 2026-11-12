@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class VersionManager:
     """Manages API versions and provides latest version information."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._latest_titles_version: str | None = None
         self._latest_skills_version: str | None = None
         self._cache_timeout = 3600  # 1 hour cache

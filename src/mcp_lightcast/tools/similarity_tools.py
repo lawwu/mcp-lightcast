@@ -9,7 +9,7 @@ from ..apis.occupation_benchmark import OccupationBenchmarkAPIClient
 from ..apis.similarity import SimilarityAPIClient
 
 
-def register_similarity_tools(mcp: FastMCP):
+def register_similarity_tools(mcp: FastMCP) -> None:
     """Register core similarity and premium API metadata tools."""
 
     @mcp.tool
