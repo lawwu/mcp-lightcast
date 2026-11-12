@@ -72,10 +72,9 @@ Explore employment, earnings, education, US job postings, and occupation benchma
 ## A small setup. A useful connection.
 
 ```bash
-# From a checkout with your credentials in .env
-uv sync
-uv run mcp-lightcast --validate-config
-uv run mcp-lightcast --transport stdio
+# With uv installed and your credentials in .env
+uvx --python 3.14 mcp-lightcast@0.3.0 --env-file .env --validate-config
+uvx --python 3.14 mcp-lightcast@0.3.0 --env-file .env --transport stdio
 ```
 
 Add the server to your MCP client, then ask something concrete: **“Extract the skills in this job description and find related skills.”**
