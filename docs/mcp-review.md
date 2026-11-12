@@ -30,8 +30,8 @@ The default is a local stdio server. HTTP remains a single-account interface usi
 For a trusted reverse proxy, configure the precise hostname and browser origins instead of disabling protection:
 
 ```bash
-FASTMCP_HTTP_ALLOWED_HOSTS='["mcp.example.com"]'
-FASTMCP_HTTP_ALLOWED_ORIGINS='["https://trusted-client.example.com"]'
+export FASTMCP_HTTP_ALLOWED_HOSTS='["mcp.example.com"]'
+export FASTMCP_HTTP_ALLOWED_ORIGINS='["https://mcp.example.com","https://trusted-client.example.com"]'
 ```
 
 These are environment variables for the server process. They do not authenticate a client. The environment may be supplied through the CLI’s `--env-file`. Keep the external authentication gateway in place.

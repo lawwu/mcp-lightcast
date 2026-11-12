@@ -43,3 +43,13 @@ jobs:
           persist-credentials: false
       - run: docker build -t mcp-lightcast:test .
       - run: docker run --rm mcp-lightcast:test --help
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: false
+          version: '0.13.7'
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.14'
+      - run: uv sync --frozen --python 3.14
+      - name: Test HTTPS reverse proxy
+        run: uv run --frozen pytest --proxy tests/integration/test_reverse_proxy.py -v
