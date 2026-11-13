@@ -1,7 +1,6 @@
 """Authentication regressions: scope isolation, expiry, concurrency, and secrecy."""
 
 import asyncio
-import time
 from urllib.parse import parse_qs
 
 import httpx
@@ -40,19 +39,21 @@ async def test_scopes_are_isolated_and_refresh_once(httpx_mock):
     assert sorted(calls) == ["classification_api", "emsi_open", "similarity"]
 
 
-async def test_expired_token_refresh_and_stale_invalidation(httpx_mock):
-    auth = LightcastAuth()
+async def test_expired_token_refresh_and_stale_invalidation(httpx_mock, clock):
+    auth = LightcastAuth(monotonic=clock.monotonic)
     credentials = await get_credentials()
-    key = (credentials.identity(auth.config.oauth_url), "emsi_open")
-    auth._tokens[key] = ("old", time.monotonic() - 1)
-    httpx_mock.add_response(
-        json={"access_token": "new", "token_type": "Bearer", "expires_in": 3600}
-    )
+    for token in ("old", "new", "newest"):
+        httpx_mock.add_response(
+            json={"access_token": token, "token_type": "Bearer", "expires_in": 30}
+        )
+    assert await auth.get_access_token() == "old"
+    clock.now += 30
     assert await auth.get_access_token() == "new"
     auth.invalidate("emsi_open", "old", credentials=credentials)
     assert await auth.get_access_token() == "new"
     auth.invalidate("emsi_open", "new", credentials=credentials)
-    assert key not in auth._tokens
+    assert await auth.get_access_token() == "newest"
+    assert len(httpx_mock.get_requests()) == 3
 
 
 async def test_short_lived_token_is_cached(httpx_mock):

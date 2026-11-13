@@ -14,6 +14,12 @@ uv run mypy src
 
 Tests use synthetic HTTP responses shaped around the current Lightcast contracts. They cover scope isolation, concurrent token refresh, version discovery, retry bounds, MCP input validation, real tool serialization, partial workflow results, Core LMI pagination, structured output schemas, current/legacy protocol connections, and HTTP Origin/Host protection. HTTP health tests check GET/HEAD, cache prevention, rejected writes, and liveness without OAuth or credentials. Unmocked network calls fail during offline tests. Local `.env` credentials are replaced with test values.
 
+Shared request tests use explicitly owned runtimes with synthetic HTTP transports
+and controlled time. They cover concurrent configured servers, OAuth expiry and
+late `401` replies, cancellation during rate waiting, HTTP client cleanup, and
+successive event loops. Workflow behavior is tested directly through the composed
+workflow module; MCP parity checks retain coverage of validation and serialization.
+
 ## Reverse proxy integration
 
 Credential-isolation regressions additionally exercise concurrent HTTP callers, both protocol versions, composed workflows, authenticated health resources, and custom providers. Cases include credential rotation, rejected headers, per-account rates, sanitized errors, and bounded token caches. These use synthetic credentials; no live account is needed.

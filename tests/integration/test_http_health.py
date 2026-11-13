@@ -1,22 +1,26 @@
 """Operational probes stay cheap, non-sensitive, and separate from OAuth checks."""
 
-from unittest.mock import AsyncMock
-
 import httpx
 import pytest
 
-from mcp_lightcast.auth.oauth import lightcast_auth
-from mcp_lightcast.server import mcp
+from mcp_lightcast.apis.base import RequestRuntime
+from mcp_lightcast.server import create_server, mcp
 
 
 @pytest.mark.parametrize("method", ["GET", "HEAD"])
 async def test_health_without_credentials_or_upstream_access(method, monkeypatch):
     monkeypatch.delenv("LIGHTCAST_CLIENT_ID", raising=False)
     monkeypatch.delenv("LIGHTCAST_CLIENT_SECRET", raising=False)
-    authenticate = AsyncMock(side_effect=AssertionError("Probe must not authenticate"))
-    monkeypatch.setattr(lightcast_auth, "get_access_token", authenticate)
+
+    def reject_upstream(request):
+        pytest.fail("Probe must not authenticate or contact Lightcast")
+
+    runtime = RequestRuntime(
+        transport_factory=lambda: httpx.MockTransport(reject_upstream)
+    )
+    server = create_server(runtime=runtime)
     async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=mcp.http_app(host_origin_protection=True)),
+        transport=httpx.ASGITransport(app=server.http_app(host_origin_protection=True)),
         base_url="http://127.0.0.1",
     ) as client:
         response = await client.request(method, "/health")
@@ -27,7 +31,6 @@ async def test_health_without_credentials_or_upstream_access(method, monkeypatch
         assert response.content == b""
     else:
         assert response.json() == {"status": "ok"}
-    authenticate.assert_not_awaited()
 
 
 async def test_health_rejects_writes():

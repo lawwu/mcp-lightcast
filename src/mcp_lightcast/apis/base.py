@@ -2,19 +2,26 @@
 
 import asyncio
 import time
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from typing import Any, Self
+from typing import Any, Protocol, Self
 from urllib.parse import quote
 from weakref import WeakKeyDictionary
 
 import httpx
 from fastmcp.exceptions import ToolError
 
-from ..auth.credentials import LightcastCredentials, get_credentials
-from ..auth.oauth import lightcast_auth
-from ..settings import get_settings
+from ..auth.credentials import (
+    ConfiguredCredentialProvider,
+    LightcastCredentials,
+    get_credentials,
+)
+from ..auth.oauth import LightcastAuth
+from ..settings import LightcastConfig, get_settings
 
 
 class APIError(ToolError):
@@ -41,14 +48,126 @@ def segment(value: str) -> str:
     return quote(value, safe="")
 
 
-_rate_state: WeakKeyDictionary = WeakKeyDictionary()
-
-
 @dataclass
 class _RateState:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     next_request: float = 0.0
     users: int = 0
+
+
+class Clock(Protocol):
+    """Time adapter shared by token expiry, rate spacing, and retry delays."""
+
+    def monotonic(self) -> float: ...
+
+    def utcnow(self) -> datetime: ...
+
+    async def sleep(self, seconds: float) -> None: ...
+
+
+class SystemClock:
+    def monotonic(self) -> float:
+        return time.monotonic()
+
+    def utcnow(self) -> datetime:
+        return datetime.now(UTC)
+
+    async def sleep(self, seconds: float) -> None:
+        await asyncio.sleep(seconds)
+
+
+class RequestRuntime:
+    """Own shared Lightcast request state without keeping HTTP clients open.
+
+    The default runtime is process-shared and loads configuration lazily. An
+    explicit runtime isolates configuration and caches; reuse it across clients
+    and servers that must share an account's rate budget. Transport factories
+    return a fresh adapter for each short-lived HTTP client, including OAuth.
+    """
+
+    def __init__(
+        self,
+        config: LightcastConfig | None = None,
+        *,
+        transport_factory: Callable[[], httpx.AsyncBaseTransport] | None = None,
+        clock: Clock | None = None,
+    ) -> None:
+        self._config = config
+        self._transport_factory = transport_factory
+        self._clock = clock if clock is not None else SystemClock()
+        self._rate_state: WeakKeyDictionary = WeakKeyDictionary()
+        self._auth = LightcastAuth(
+            config,
+            client_factory=self._new_client,
+            monotonic=self._clock.monotonic,
+            credential_resolver=self.credentials,
+        )
+
+    @property
+    def config(self) -> LightcastConfig:
+        return self._config if self._config is not None else get_settings()
+
+    def _new_client(self) -> httpx.AsyncClient:
+        transport = self._transport_factory() if self._transport_factory else None
+        return httpx.AsyncClient(timeout=self.config.timeout, transport=transport)
+
+    async def credentials(self) -> LightcastCredentials:
+        return await get_credentials(ConfiguredCredentialProvider(self.config))
+
+    async def authenticate(self) -> str:
+        """Check the current caller's default scope using this runtime's cache."""
+        return await self._auth.get_access_token()
+
+    @contextmanager
+    def context(self) -> Iterator[None]:
+        """Select this runtime for an operation and its asynchronous child tasks."""
+        token = _request_runtime.set(self)
+        try:
+            yield
+        finally:
+            _request_runtime.reset(token)
+
+    async def _throttle(
+        self, base_url: str, api_name: str | None, credentials: LightcastCredentials
+    ) -> None:
+        states = self._rate_state.setdefault(asyncio.get_running_loop(), {})
+        key = (
+            base_url,
+            credentials.identity(self.config.oauth_url, include_secret=False),
+        )
+        if key not in states:
+            for stale_key, state in list(states.items()):
+                if state.users == 0 and state.next_request <= self._clock.monotonic():
+                    del states[stale_key]
+            if len(states) >= 1024:
+                raise APIError("Server credential capacity reached; retry later.")
+            states[key] = _RateState()
+        state = states[key]
+        state.users += 1
+        try:
+            async with state.lock:
+                await self._clock.sleep(
+                    max(0, state.next_request - self._clock.monotonic())
+                )
+                rate = (
+                    self.config.core_lmi_requests_per_second
+                    if api_name == "core_lmi"
+                    else self.config.requests_per_second
+                )
+                state.next_request = self._clock.monotonic() + 1 / rate
+        finally:
+            state.users -= 1
+
+
+_default_runtime = RequestRuntime()
+_request_runtime: ContextVar[RequestRuntime | None] = ContextVar(
+    "lightcast_request_runtime", default=None
+)
+
+
+def get_request_runtime() -> RequestRuntime:
+    runtime = _request_runtime.get()
+    return runtime if runtime is not None else _default_runtime
 
 
 class BaseLightcastClient:
@@ -70,7 +189,8 @@ class BaseLightcastClient:
     }
 
     def __init__(self, api_name: str | None = None) -> None:
-        self.config = get_settings()
+        self._runtime = get_request_runtime()
+        self.config = self._runtime.config
         self.api_name = api_name
         self.base_url = self.config.base_url.rstrip("/")
         if api_name == "classification":
@@ -82,8 +202,8 @@ class BaseLightcastClient:
         self.required_scope = self.config.api_scopes.get(
             api_name or "", self.API_SCOPES.get(api_name or "", self.config.oauth_scope)
         )
-        self.client = httpx.AsyncClient(timeout=self.config.timeout)
-        self._auth = lightcast_auth
+        self.client = self._runtime._new_client()
+        self._auth = self._runtime._auth
 
     async def __aenter__(self) -> Self:
         return self
@@ -92,35 +212,7 @@ class BaseLightcastClient:
         await self.client.aclose()
         return None
 
-    async def _throttle(self, credentials: LightcastCredentials) -> None:
-        states = _rate_state.setdefault(asyncio.get_running_loop(), {})
-        key = (
-            self.base_url,
-            credentials.identity(self.config.oauth_url, include_secret=False),
-        )
-        if key not in states:
-            for stale_key, state in list(states.items()):
-                if state.users == 0 and state.next_request <= time.monotonic():
-                    del states[stale_key]
-            if len(states) >= 1024:
-                raise APIError("Server credential capacity reached; retry later.")
-            states[key] = _RateState()
-        state = states[key]
-        state.users += 1
-        try:
-            async with state.lock:
-                await asyncio.sleep(max(0, state.next_request - time.monotonic()))
-                rate = (
-                    self.config.core_lmi_requests_per_second
-                    if self.api_name == "core_lmi"
-                    else self.config.requests_per_second
-                )
-                state.next_request = time.monotonic() + 1 / rate
-        finally:
-            state.users -= 1
-
-    @staticmethod
-    def _retry_delay(response: httpx.Response, attempt: int) -> float | None:
+    def _retry_delay(self, response: httpx.Response, attempt: int) -> float | None:
         raw = response.headers.get("Retry-After")
         if raw:
             try:
@@ -128,7 +220,7 @@ class BaseLightcastClient:
             except ValueError:
                 try:
                     delay = (
-                        parsedate_to_datetime(raw) - datetime.now(UTC)
+                        parsedate_to_datetime(raw) - self._runtime._clock.utcnow()
                     ).total_seconds()
                 except TypeError, ValueError:
                     return None
@@ -149,14 +241,14 @@ class BaseLightcastClient:
         )
         refreshed = False
         retries = 0
-        credentials = await get_credentials()
+        credentials = await self._runtime.credentials()
         while True:
             headers = await self._auth.get_auth_headers(
                 self.required_scope, credentials=credentials
             )
             if isinstance(data, str):
                 headers["Content-Type"] = "text/plain"
-            await self._throttle(credentials)
+            await self._runtime._throttle(self.base_url, self.api_name, credentials)
             try:
                 response = await self.client.request(
                     method=method,
@@ -184,7 +276,7 @@ class BaseLightcastClient:
             ):
                 delay = self._retry_delay(response, retries)
                 if delay is not None:
-                    await asyncio.sleep(delay)
+                    await self._runtime._clock.sleep(delay)
                     retries += 1
                     continue
             if response.status_code == 429:

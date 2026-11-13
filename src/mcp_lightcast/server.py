@@ -8,6 +8,7 @@ from fastmcp.server.auth import AuthProvider
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from .apis.base import RequestRuntime, get_request_runtime
 from .auth.credentials import CredentialMiddleware, CredentialProvider
 from .settings import ServerConfig
 from .tools.classification_tools import register_classification_tools
@@ -24,13 +25,14 @@ def create_server(
     credential_provider: CredentialProvider | None = None,
     *,
     auth: AuthProvider | None = None,
+    runtime: RequestRuntime | None = None,
 ) -> FastMCP:
-    """Build a server with an optional caller-authorized credential provider."""
+    """Build a server with optional credential resolution and shared request ownership."""
     server_config = ServerConfig()
     mcp = FastMCP(
         name=server_config.server_name,
         auth=auth,
-        middleware=[CredentialMiddleware(credential_provider)],
+        middleware=[CredentialMiddleware(credential_provider, runtime)],
         version=version("mcp-lightcast"),
         website_url="https://lawwu.github.io/mcp-lightcast/",
         instructions=(
@@ -83,10 +85,10 @@ def create_server(
     @mcp.resource("lightcast://server/health")
     async def health_check() -> dict:
         """Check OAuth for the configured default scope; does not verify all premium APIs."""
-        from .auth.oauth import AuthenticationError, lightcast_auth
+        from .auth.oauth import AuthenticationError
 
         try:
-            await lightcast_auth.get_access_token()
+            await get_request_runtime().authenticate()
             return {
                 "status": "healthy",
                 "authentication": "verified",
