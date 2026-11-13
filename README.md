@@ -2,19 +2,19 @@
 
 **Lightcast’s labor-market intelligence, connected to your AI tools.**
 
-[Documentation](https://lawwu.github.io/mcp-lightcast/) · [Tool reference](https://lawwu.github.io/mcp-lightcast/reference/tools/) · [PyPI](https://pypi.org/project/mcp-lightcast/0.4.0/) · [v0.4.0 release notes](https://github.com/lawwu/mcp-lightcast/releases/tag/v0.4.0)
+[Documentation](https://lawwu.github.io/mcp-lightcast/) · [Tool reference](https://lawwu.github.io/mcp-lightcast/reference/tools/) · [PyPI](https://pypi.org/project/mcp-lightcast/0.4.1/) · [v0.4.1 release notes](https://github.com/lawwu/mcp-lightcast/releases/tag/v0.4.1)
 
 37 MCP tools for Skills, Titles, Classification, Similarity, Occupation Benchmark, Career Pathways, US Job Postings, and Core LMI. Built with Python 3.14+, FastMCP 4, and scope-specific OAuth authentication.
 
-## Install v0.4.0
+## Install v0.4.1
 
-Version **0.4.0** is available on PyPI and requires **Python 3.14 or newer**. With [uv installed](https://docs.astral.sh/uv/getting-started/installation/), run the published package without cloning this repository:
+Version **0.4.1** is available on PyPI and requires **Python 3.14 or newer**. With [uv installed](https://docs.astral.sh/uv/getting-started/installation/), run the published package without cloning this repository:
 
 ```bash
-uvx --python 3.14 mcp-lightcast@0.4.0 --version
+uvx --python 3.14 mcp-lightcast@0.4.1 --version
 ```
 
-Alternatively, install into an existing Python 3.14+ virtual environment with `python -m pip install "mcp-lightcast==0.4.0"`, then use the `mcp-lightcast` command directly.
+Alternatively, install into an existing Python 3.14+ virtual environment with `python -m pip install "mcp-lightcast==0.4.1"`, then use the `mcp-lightcast` command directly.
 
 **Upgrading from 0.2?** Review the [migration guide](https://lawwu.github.io/mcp-lightcast/migration/) for the higher Python requirement, default stdio transport, and breaking Skills, Job Postings, and Occupation Benchmark tool changes.
 
@@ -32,8 +32,8 @@ LIGHTCAST_CLIENT_SECRET=your-client-secret
 From the directory containing `.env`, check authentication and start the server:
 
 ```bash
-uvx --python 3.14 mcp-lightcast@0.4.0 --env-file .env --validate-config
-uvx --python 3.14 mcp-lightcast@0.4.0 --env-file .env --transport stdio
+uvx --python 3.14 mcp-lightcast@0.4.1 --env-file .env --validate-config
+uvx --python 3.14 mcp-lightcast@0.4.1 --env-file .env --transport stdio
 ```
 
 The authentication check validates the default scope; it does not establish access to every API or Core LMI dataset.
@@ -48,7 +48,7 @@ For a client that launches local MCP servers, use the following configuration. R
     "lightcast": {
       "command": "uvx",
       "args": [
-        "--python", "3.14", "mcp-lightcast@0.4.0",
+        "--python", "3.14", "mcp-lightcast@0.4.1",
         "--env-file", "/absolute/path/to/lightcast.env",
         "--transport", "stdio", "--quiet"
       ]
@@ -60,7 +60,7 @@ For a client that launches local MCP servers, use the following configuration. R
 For HTTP:
 
 ```bash
-uvx --python 3.14 mcp-lightcast@0.4.0 --env-file .env \
+uvx --python 3.14 mcp-lightcast@0.4.1 --env-file .env \
   --transport streamable-http --host 127.0.0.1 --port 3000
 ```
 
@@ -74,14 +74,14 @@ The published image includes Python and the server:
 
 ```bash
 docker run --rm -i --platform linux/amd64 --env-file .env \
-  ghcr.io/lawwu/mcp-lightcast:0.4.0
+  ghcr.io/lawwu/mcp-lightcast:0.4.1
 ```
 
 The image targets Linux amd64; Docker can emulate it on Apple Silicon. Moving tags `0.4` and `latest` are also available. See [deployment](https://lawwu.github.io/mcp-lightcast/deployment/) for HTTP hosting.
 
 ## What you can do
 
-**New in v0.4.0:** [credential providers](https://lawwu.github.io/mcp-lightcast/credentials/) keep environment credentials as the default for local use and add optional HTTP credential headers, account-isolated token caches, and a custom provider interface for authorized secret-store integrations. Header mode never falls back to the server’s environment account. Shared HTTP deployments still need inbound MCP authentication.
+**Available since v0.4.0:** [credential providers](https://lawwu.github.io/mcp-lightcast/credentials/) keep environment credentials as the default for local use and add optional HTTP credential headers, account-isolated token caches, and a custom provider interface for authorized secret-store integrations. Header mode never falls back to the server’s environment account. Shared HTTP deployments still need inbound MCP authentication.
 
 | Task | Tools |
 | --- | --- |

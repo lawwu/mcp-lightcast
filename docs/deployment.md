@@ -32,7 +32,7 @@ Configure the PyPI project's GitHub trusted publisher for owner `lawwu`, reposit
 
 If publishing fails, fix the reported credential or service problem and rerun only failed jobs. Never move an already-pushed release tag or replace a PyPI version. Successful publishers are not repeated when rerunning failed jobs, and the GitHub release job can safely update its existing notes and assets.
 
-See the [0.4.0 release notes](releases/0.4.0.md) and [migration guide](migration.md).
+See the [0.4.1 release notes](releases/0.4.1.md) and [migration guide](migration.md).
 
 ## Dependency maintenance
 

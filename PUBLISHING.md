@@ -9,4 +9,4 @@ Package publication is separate from GitHub Pages. Documentation deploys on `mai
 
 Configure the GitHub `pypi` and `testpypi` environments and the corresponding trusted publishers before releasing. The manual workflow publishes to TestPyPI only. No PyPI tokens belong in `.env.example` or the repository.
 
-The docs for 0.3.0 describe the repository implementation. Update installation instructions once that version is available on PyPI.
+Keep current installation examples and release links aligned with the version being published. Preserve historical release notes and feature-introduction dates. After pushing the tag, verify PyPI, the versioned Docker image, and the GitHub release; documentation deployment alone does not publish a package.

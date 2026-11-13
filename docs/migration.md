@@ -34,3 +34,12 @@ Update clients to read `workflow_metadata.status` and preserve upstream `warning
 Version 0.3.0 adds five Core LMI tools and upgrades to FastMCP 4 / MCP SDK 2. The 2026-07-28 protocol and legacy 2025-11-25 clients are both tested. Python code consuming SDK objects should use snake_case attributes; the generated documentation now uses `mcp.list_tools()`.
 
 HTTP now rejects untrusted Host and Origin headers. Configure exact trusted hosts/origins for a reverse proxy; see [MCP practices](mcp-review.md). Strict argument validation also rejects previously coerced values such as a string supplied for an integer limit.
+
+## Upgrading from 0.4.0 to 0.4.1
+
+Existing CLI configuration, credential providers, and all 37 MCP tool contracts
+remain compatible. Python applications can optionally supply a `RequestRuntime`
+to `create_server` or select it with `runtime.context()` for direct operations.
+Reuse an owner across clients and servers sharing an account's rate budget;
+separate explicit owners do not coordinate their rates. See the
+[runtime example](architecture.md#runtime-example).
