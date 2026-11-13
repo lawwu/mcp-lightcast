@@ -63,6 +63,41 @@ Production uses the normal HTTP transport and system clock. Tests use a mock
 transport adapter and controlled clock, asserting requests and results without
 clearing private caches or patching global time.
 
+### Runtime example
+
+This Python example creates two server instances sharing one account's token
+cache and rate budget. `LightcastConfig` reads credentials from the environment
+or `.env`; constructing these objects makes no upstream requests.
+
+```python
+from mcp_lightcast.apis.base import RequestRuntime
+from mcp_lightcast.server import create_server
+from mcp_lightcast.settings import LightcastConfig
+
+runtime = RequestRuntime(LightcastConfig())
+first_server = create_server(runtime=runtime)
+second_server = create_server(runtime=runtime)
+```
+
+Direct Python operations can use the same owner:
+
+```python
+from mcp_lightcast.workflows import analyze_job_posting_skills
+
+async def analyze():
+    with runtime.context():
+        return await analyze_job_posting_skills(
+            job_title="Python Developer",
+            job_description="Build data pipelines with SQL.",
+        )
+```
+
+Calling `analyze()` uses real Lightcast permissions and quota. Keep calls sharing
+an account's rate budget on the same runtime and event loop. Separate processes
+still need deployment-level rate coordination. For a custom credential provider,
+pass it to `create_server` or bind `credential_provider_context(provider)` around
+the direct operation. Inbound MCP authentication remains a separate concern.
+
 ## Truthful results
 
 Core LMI resolves numeric releases through dataset metadata, uses the separate Agnitio root and scope, and applies a one-request-per-second rate. Its documented offset was ignored by the live service, so bounded prefix retrieval and local slicing prevent duplicate pages.
