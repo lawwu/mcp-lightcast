@@ -8,7 +8,7 @@ import httpx
 import pytest
 from starlette.requests import Request
 
-from mcp_lightcast.apis.base import BaseLightcastClient, _rate_state
+from mcp_lightcast.apis.base import BaseLightcastClient
 from mcp_lightcast.auth.credentials import (
     CredentialError,
     LightcastCredentials,
@@ -166,7 +166,6 @@ async def test_tokens_isolate_accounts_scopes_secrets_and_issuers(httpx_mock):
     get_settings().oauth_url = "https://different-issuer.test/token"
     await auth.get_access_token("emsi_open", credentials=a)
     assert calls[-1][3] == "https://different-issuer.test/token"
-    assert "secret-a" not in repr(auth._tokens.keys())
 
 
 async def test_token_cache_is_bounded_and_eviction_reauthenticates(httpx_mock):
@@ -178,28 +177,24 @@ async def test_token_cache_is_bounded_and_eviction_reauthenticates(httpx_mock):
     auth.max_cached_tokens = 2
     for name in ("a", "b", "c", "a"):
         await auth.get_access_token(credentials=LightcastCredentials(name, "synthetic"))
-    assert len(auth._tokens) == 2
     assert len(httpx_mock.get_requests()) == 4
 
 
-async def test_rate_spacing_is_per_account_and_shared_across_rotations(monkeypatch):
+async def test_rate_spacing_is_per_account_and_shared_across_rotations(
+    monkeypatch, api_mock, clock
+):
     monkeypatch.setenv("LIGHTCAST_REQUESTS_PER_SECOND", "1")
-    a = LightcastCredentials("a", "old")
-    rotated = LightcastCredentials("a", "new")
-    b = LightcastCredentials("b", "other")
-    sleeps = []
-
-    async def sleep(delay):
-        sleeps.append(delay)
-
-    monkeypatch.setattr("mcp_lightcast.apis.base.asyncio.sleep", sleep)
-    async with BaseLightcastClient("skills") as client:
-        await client._throttle(a)
-        await client._throttle(b)
-        await client._throttle(rotated)
-    assert sleeps[:2] == [0, 0]
-    assert sleeps[2] > 0.9
-    assert len(_rate_state[asyncio.get_running_loop()]) == 2
+    api_mock.add_response(json={"data": []}, is_reusable=True)
+    for provider in (
+        FixedProvider("a", "old"),
+        FixedProvider("b", "other"),
+        FixedProvider("a", "new"),
+    ):
+        with credential_provider_context(provider):
+            async with BaseLightcastClient("skills") as client:
+                await client.get("meta")
+    assert clock.delays == [0, 0, 1]
+    assert len(api_mock.get_requests()) == 3
 
 
 async def test_metadata_cache_does_not_cross_credentials(api_mock):

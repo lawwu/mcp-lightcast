@@ -3,6 +3,7 @@
 import asyncio
 import time
 from collections import OrderedDict
+from collections.abc import Awaitable, Callable
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
 import httpx
@@ -29,8 +30,21 @@ class TokenResponse(BaseModel):
 
 
 class LightcastAuth:
-    def __init__(self, config: LightcastConfig | None = None):
+    def __init__(
+        self,
+        config: LightcastConfig | None = None,
+        *,
+        client_factory: Callable[[], httpx.AsyncClient] | None = None,
+        monotonic: Callable[[], float] = time.monotonic,
+        credential_resolver: Callable[[], Awaitable[LightcastCredentials]]
+        | None = None,
+    ):
         self._config = config
+        self._client_factory = client_factory or (
+            lambda: httpx.AsyncClient(timeout=self.config.timeout)
+        )
+        self._monotonic = monotonic
+        self._credential_resolver = credential_resolver
         self._tokens: OrderedDict[tuple[str, str], tuple[str, float]] = OrderedDict()
         self._locks: WeakKeyDictionary = WeakKeyDictionary()
         self.max_cached_tokens = 1024
@@ -48,11 +62,14 @@ class LightcastAuth:
         scope = scope or self.config.oauth_scope
         if credentials is None:
             try:
-                credentials = (
-                    await EnvironmentCredentialProvider(self._config).resolve()
-                    if self._config is not None
-                    else await get_credentials()
-                )
+                if self._credential_resolver is not None:
+                    credentials = await self._credential_resolver()
+                elif self._config is not None:
+                    credentials = await EnvironmentCredentialProvider(
+                        self._config
+                    ).resolve()
+                else:
+                    credentials = await get_credentials()
             except CredentialError as exc:
                 raise AuthenticationError(str(exc)) from None
         key = (credentials.identity(self.config.oauth_url), scope)
@@ -63,7 +80,7 @@ class LightcastAuth:
         lock = locks.setdefault(key, asyncio.Lock())
         async with lock:
             token, expires_at = self._tokens.get(key, ("", 0))
-            if token and time.monotonic() < expires_at:
+            if token and self._monotonic() < expires_at:
                 self._tokens.move_to_end(key)
                 return token
             return await self._refresh_token(scope, credentials, key)
@@ -73,7 +90,7 @@ class LightcastAuth:
     ) -> str:
         config = self.config
         try:
-            async with httpx.AsyncClient(timeout=config.timeout) as client:
+            async with self._client_factory() as client:
                 response = await client.post(
                     config.oauth_url,
                     data={
@@ -96,11 +113,11 @@ class LightcastAuth:
             ) from None
         buffer = min(60, data.expires_in * 0.1)
         for expired_key, (_, expiry) in list(self._tokens.items()):
-            if expiry <= time.monotonic():
+            if expiry <= self._monotonic():
                 self._tokens.pop(expired_key, None)
         self._tokens[key] = (
             data.access_token,
-            time.monotonic() + data.expires_in - buffer,
+            self._monotonic() + data.expires_in - buffer,
         )
         self._tokens.move_to_end(key)
         while len(self._tokens) > self.max_cached_tokens:
@@ -127,4 +144,10 @@ class LightcastAuth:
         }
 
 
-lightcast_auth = LightcastAuth()
+def __getattr__(name: str) -> LightcastAuth:
+    # Preserve the historical import without creating a second token owner.
+    if name == "lightcast_auth":
+        from ..apis.base import get_request_runtime
+
+        return get_request_runtime()._auth
+    raise AttributeError(name)

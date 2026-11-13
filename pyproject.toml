@@ -109,7 +109,7 @@ packages = ["src/mcp_lightcast"]
 [tool.hatch.build.targets.sdist]
 include = [
     "/src", "/tests", "/docs", "/examples", "/config",
-    "/README.md", "/LICENSE", "/pyproject.toml", "/uv.lock", "/mkdocs.yml",
+    "/README.md", "/GLOSSARY.md", "/LICENSE", "/pyproject.toml", "/uv.lock", "/mkdocs.yml",
     "/.env.example", "/Dockerfile", "/Dockerfile.dev", "/docker-compose.yml",
     "/run_server.py", "/scripts/docs.py",
 ]

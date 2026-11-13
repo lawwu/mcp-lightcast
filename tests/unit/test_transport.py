@@ -9,7 +9,6 @@ from mcp_lightcast.apis.base import (
     RateLimitError,
     segment,
 )
-from mcp_lightcast.auth.oauth import lightcast_auth
 
 
 @pytest.mark.parametrize(
@@ -55,18 +54,16 @@ async def test_quota_is_not_retried(api_mock, headers):
     assert len(api_mock.get_requests()) == 1
 
 
-async def test_401_refreshes_only_once(api_mock, monkeypatch):
-    invalidations = []
-    monkeypatch.setattr(
-        lightcast_auth, "invalidate", lambda *args, **kwargs: invalidations.append(args)
-    )
+async def test_401_refreshes_only_once(api_mock):
     api_mock.add_response(status_code=401)
     api_mock.add_response(status_code=401)
     async with BaseLightcastClient("titles") as c:
         with pytest.raises(APIError) as exc:
             await c.get("meta")
     assert exc.value.status_code == 401
-    assert len(invalidations) == 1
+    requests = api_mock.get_requests()
+    assert len(requests) == 2
+    assert requests[0].headers["Authorization"] != requests[1].headers["Authorization"]
 
 
 async def test_non_json_response_fails(api_mock):
@@ -76,10 +73,7 @@ async def test_non_json_response_fails(api_mock):
             await c.get("meta")
 
 
-async def test_transient_retries_are_bounded(api_mock, monkeypatch):
-    monkeypatch.setattr(
-        BaseLightcastClient, "_retry_delay", staticmethod(lambda *args: 0)
-    )
+async def test_transient_retries_are_bounded(api_mock, clock):
     for _ in range(3):
         api_mock.add_response(status_code=503)
     async with BaseLightcastClient("skills") as c:
@@ -87,6 +81,7 @@ async def test_transient_retries_are_bounded(api_mock, monkeypatch):
             await c.get("meta")
     assert exc.value.status_code == 503
     assert len(api_mock.get_requests()) == 3
+    assert 0.5 in clock.delays and 1.0 in clock.delays
 
 
 async def test_transport_exception_is_sanitized(api_mock):
@@ -107,17 +102,11 @@ def test_identifiers_are_url_encoded():
     assert segment("a/b?x=y") == "a%2Fb%3Fx%3Dy"
 
 
-async def test_cancellation_propagates_without_retry(api_mock, monkeypatch):
+async def test_cancellation_propagates_without_retry(api_mock):
     import asyncio
 
-    calls = []
+    api_mock.add_exception(asyncio.CancelledError())
     async with BaseLightcastClient("skills") as client:
-
-        async def cancel(**kwargs):
-            calls.append(kwargs)
-            raise asyncio.CancelledError()
-
-        monkeypatch.setattr(client.client, "request", cancel)
         with pytest.raises(asyncio.CancelledError):
             await client.get("meta")
-    assert len(calls) == 1
+    assert len(api_mock.get_requests()) == 1

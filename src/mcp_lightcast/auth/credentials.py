@@ -9,13 +9,16 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 
 from ..settings import LightcastConfig, get_settings
+
+if TYPE_CHECKING:
+    from ..apis.base import RequestRuntime
 
 _identity_key = secrets.token_bytes(32)
 
@@ -93,11 +96,15 @@ class HeaderCredentialProvider:
 
 
 class ConfiguredCredentialProvider:
+    def __init__(self, config: LightcastConfig | None = None) -> None:
+        self._config = config
+
     async def resolve(self) -> LightcastCredentials:
+        config = self._config or get_settings()
         provider = (
             HeaderCredentialProvider()
-            if get_settings().credential_mode == "headers"
-            else EnvironmentCredentialProvider()
+            if config.credential_mode == "headers"
+            else EnvironmentCredentialProvider(config)
         )
         return await provider.resolve()
 
@@ -141,23 +148,39 @@ def credential_provider_context(provider: CredentialProvider) -> Iterator[None]:
         _request_credentials.reset(token)
 
 
-async def get_credentials() -> LightcastCredentials:
+async def get_credentials(
+    default_provider: CredentialProvider | None = None,
+) -> LightcastCredentials:
     resolver = _request_credentials.get()
     if resolver is None:
-        resolver = _RequestCredentials(ConfiguredCredentialProvider())
+        resolver = _RequestCredentials(
+            default_provider
+            if default_provider is not None
+            else ConfiguredCredentialProvider()
+        )
     return await resolver.resolve()
 
 
 class CredentialMiddleware(Middleware):
-    def __init__(self, provider: CredentialProvider | None = None) -> None:
-        self.provider = (
-            provider if provider is not None else ConfiguredCredentialProvider()
-        )
+    def __init__(
+        self,
+        provider: CredentialProvider | None = None,
+        runtime: RequestRuntime | None = None,
+    ) -> None:
+        self.provider = provider
+        self.runtime = runtime
 
     async def on_request(
         self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]
     ) -> Any:
-        # Resolve lazily: discovery, server info and HTTP liveness need no secrets.
-        # A new context for every request also covers the legacy HTTP transport.
-        with credential_provider_context(self.provider):
+        from ..apis.base import get_request_runtime
+
+        runtime = self.runtime if self.runtime is not None else get_request_runtime()
+        provider = (
+            self.provider
+            if self.provider is not None
+            else ConfiguredCredentialProvider(runtime.config)
+        )
+        # Discovery stays credential-free; every request gets a fresh resolver.
+        with runtime.context(), credential_provider_context(provider):
             return await call_next(context)

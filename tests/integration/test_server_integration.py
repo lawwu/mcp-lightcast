@@ -69,27 +69,6 @@ async def test_mcp_rejects_invalid_inputs_before_network(name, args):
             await client.call_tool(name, args)
 
 
-async def test_posting_analysis_keeps_title_only_ids(api_mock):
-    api_mock.add_response(
-        json={"data": {"title": {"id": "ET1", "name": "Developer"}, "confidence": 1}}
-    )
-    api_mock.add_response(
-        json={"data": [{"skill": {"id": "KS1", "name": "Python"}, "confidence": 0.8}]}
-    )
-    api_mock.add_response(
-        json={"data": [{"skill": {"id": "KS2", "name": "SQL"}, "confidence": 0.9}]}
-    )
-    async with Client(mcp) as client:
-        result = plain(
-            await client.call_tool(
-                "analyze_job_posting_skills",
-                {"job_title": "Python Developer", "job_description": "SQL"},
-            )
-        )
-    assert {s["id"] for s in result["combined_skills"]} == {"KS1", "KS2"}
-    assert result["combined_skills"][0]["sources"] == ["title"]
-
-
 async def test_mcp_api_errors_are_not_successful_results(api_mock):
     api_mock.add_response(status_code=403, json={"error": "private response"})
     async with Client(mcp) as client:

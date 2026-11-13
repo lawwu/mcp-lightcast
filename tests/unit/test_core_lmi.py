@@ -33,7 +33,7 @@ async def test_versions_are_arrays_and_latest_is_numeric(api_mock):
     requests = api_mock.get_requests()
     assert requests[0].url.path == "/meta/dataset/emsi.us.occupation"
     assert requests[1].url.path == "/emsi.us.occupation/2026.10"
-    assert requests[0].headers["Authorization"] == "Bearer test-agnitio"
+    assert requests[0].headers["Authorization"] == "Bearer test-agnitio-1"
 
 
 async def test_pinned_query_serializes_native_aliases_and_pagination(api_mock):
@@ -292,21 +292,12 @@ async def test_query_window_boundary_is_explicit(api_mock):
     assert result.pagination.window_limit == 5000
 
 
-async def test_core_rate_spacing_is_shared_between_clients(monkeypatch):
-    from mcp_lightcast.apis import base
-
+async def test_core_rate_spacing_is_shared_between_clients(
+    monkeypatch, api_mock, clock
+):
     monkeypatch.setenv("LIGHTCAST_CORE_LMI_REQUESTS_PER_SECOND", "1")
-    monkeypatch.setattr(base.time, "monotonic", lambda: 100.0)
-    delays = []
-
-    async def sleep(delay):
-        delays.append(delay)
-
-    monkeypatch.setattr(base.asyncio, "sleep", sleep)
+    api_mock.add_response(json={"datasets": []}, is_reusable=True)
     async with CoreLmiAPIClient() as first, CoreLmiAPIClient() as second:
-        from mcp_lightcast.auth.credentials import get_credentials
-
-        credentials = await get_credentials()
-        await first._throttle(credentials)
-        await second._throttle(credentials)
-    assert delays == [0, 1]
+        await first.list_datasets()
+        await second.list_datasets()
+    assert clock.delays == [0, 1]
